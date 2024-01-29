@@ -1,13 +1,15 @@
 #include <iostream>
 #include "DES.h"
+#include "DES_Matrices_NIST.h"
 
-// input 6: divided into V[1:0]={in5,in0} - rows, A[3:0]={in4,in3,in2} - columns. 
-// output 4 bits
-unsigned int SBOX[8][4][16];
+
+// global variables
 uint64_t key;
 uint64_t plaintext;
 
-void encryptDES()
+// input 6: divided into V[1:0]={in5,in0} - rows, A[3:0]={in4,in3,in2} - columns. 
+// output 4 bits
+void EncryptDES()
 {
 	
 	generateKey();
@@ -18,15 +20,25 @@ void encryptDES()
 		generateRoundKey();
 		expandPermutation(); // result1
 		// result2 = result1^roundKey;
-		Substitute(); // result3
-		Transpose(); // result 4
+		substitute(); // result3
+		mixPermutation(); // result 4
 		// xxx
 	}
 	// input <<=32; input>>=32; // i.e. making input[63:32] = 0
 	//result += input // i.e. Result[63:32] = Input[31:0] ^ Result4[31:0]
+	
+	swapLR();
+	reverseInitialPermutation();
 }
 
-void decryptDES()
+void DecryptDES()
+{
+
+}
+
+// auxiliary functions
+
+void swapLR()
 {
 
 }
@@ -37,6 +49,10 @@ void initialPermutation()
 
 }
 
+void reverseInitialPermutation()
+{
+
+}
 
 
 void generateKey()
@@ -54,19 +70,32 @@ void expandPermutation()
 
 }
 
-void Substitute()
+void substitute()
+{
+	// 
+}
+
+
+void mixPermutation()
 {
 
 }
 
-
-void Transpose()
+// Matrix helper functions
+void permuteMatrix(uint64_t* input, unsigned int* P, unsigned int size)
 {
+	uint64_t output = 0;
+	uint64_t bit;
 
+	for (int i = 0; i < size; i++)
+	{
+		bit = (*input >> (P[i] - 1)) & 1;
+		output += bit << i;
+	}
+	*input = output;
 }
 
-// debug functions
-
+// Debug functions
 void printMatrix(uint64_t matrix, int y, int x)
 {
 	bool bit;
@@ -83,19 +112,6 @@ void printMatrix(uint64_t matrix, int y, int x)
 		std::cout << "\n";
 	}
 	std::cout << "Matrix printed.\n";
-}
-
-void permuteMatrix(uint64_t* input, unsigned int* P, unsigned int size)
-{
-	uint64_t output = 0;
-	uint64_t bit;
-
-	for (int i = 0; i < size; i++)
-	{
-		bit = (*input >> (P[i] - 1)) & 1;
-		output += bit << i;
-	}
-	*input = output;
 }
 
 
