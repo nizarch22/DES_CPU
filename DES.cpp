@@ -114,6 +114,21 @@ void printMatrix(uint64_t matrix, int y, int x)
 	std::cout << "Matrix printed.\n";
 }
 
+int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, int size)
+{
+	bool bit;
+	uint64_t mask = 1;
+	for (int i = 0; i < size; i++)
+	{
+		bit = (m1 & mask) == (m2 & mask);
+		mask <<= 1;
+
+		if (bit == 0)
+			return 0;
+	}
+	return 1;
+}
+
 
 
 
