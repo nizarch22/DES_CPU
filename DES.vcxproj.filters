@@ -26,5 +26,8 @@
     <ClInclude Include="DES.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="DES_Matrices_NIST.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
