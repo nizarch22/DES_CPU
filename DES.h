@@ -9,7 +9,9 @@ void expandPermutation();
 void Substitute();
 void Transpose();
 
+// matrix helper functions
+void permuteMatrix(uint64_t* input, unsigned int* P, unsigned int size);
 
 
 // debug functions
-void printMatrix(int y, int x, uint64_t matrix);
+void printMatrix(uint64_t matrix, int y, int x);

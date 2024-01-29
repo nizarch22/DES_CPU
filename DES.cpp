@@ -67,23 +67,36 @@ void Transpose()
 
 // debug functions
 
-void printMatrix(int y, int x, uint64_t matrix)
+void printMatrix(uint64_t matrix, int y, int x)
 {
-	unsigned char bit;
-	uint64_t mask = 1;
-	unsigned int a, b;
-	for (int i = 0; i < x; i++)
+	bool bit;
+	bool mask = 1;
+	for (int i = 0; i < y; i++)
 	{
-		for (int j = 0; j < y; j++)
+		for (int j = 0; j < x; j++)
 		{
+
 			bit = matrix&mask;
 			std::cout << bit << ",";
-			mask <<= 1;
+			matrix >>= 1;
 		}
 		std::cout << "\n";
 	}
+	std::cout << "Matrix printed.\n";
 }
 
+void permuteMatrix(uint64_t* input, unsigned int* P, unsigned int size)
+{
+	uint64_t output = 0;
+	uint64_t bit;
+
+	for (int i = 0; i < size; i++)
+	{
+		bit = (*input >> (P[i] - 1)) & 1;
+		output += bit << i;
+	}
+	*input = output;
+}
 
 
 
