@@ -1,98 +1,137 @@
 #include <iostream>
+#include <random>
 #include "DES.h"
 #include "DES_Matrices_NIST.h"
 
-
-// global variables
-uint64_t key;
-uint64_t plaintext;
-
 // input 6: divided into V[1:0]={in5,in0} - rows, A[3:0]={in4,in3,in2} - columns. 
 // output 4 bits
-void EncryptDES()
-{
-	
-	generateKey();
-	initialPermutation();
-	// result = input >> 32; // i.e. Result[31:0] = Input[63:32]
-	for (int i = 0; i < 16; i++)
-	{
-		generateRoundKey();
-		expandPermutation(); // result1
-		// result2 = result1^roundKey;
-		substitute(); // result3
-		mixPermutation(); // result 4
-		// xxx
-	}
-	// input <<=32; input>>=32; // i.e. making input[63:32] = 0
-	//result += input // i.e. Result[63:32] = Input[31:0] ^ Result4[31:0]
-	
-	swapLR();
-	reverseInitialPermutation();
-}
-
-void DecryptDES()
-{
-
-}
 
 // auxiliary functions
 
-void swapLR()
+void initialPermutation(uint64_t& input)
 {
-
+	permuteMatrix(input, IP, 64);
 }
 
 
-void initialPermutation()
-{
-
-}
-
-void reverseInitialPermutation()
-{
-
-}
-
-
-void generateKey()
+void generateKey(uint64_t& key)
 {
 	// 64 bits
+	key = ((uint64_t)rand()) << 32 | rand();
+	permuteMatrix(key, PC1, 56);
 }
 
-
-void generateRoundKey()
+void leftCircularShift(uint32_t& input, uint8_t times)
 {
-}
+	uint32_t mask28thBit = 1 << 27; // 28th bit
+	uint32_t mask28Bits = 268435455; // covers first 28 bits
 
-void expandPermutation()
+	uint8_t bit;
+	for (int i = 0; i < times; i++)
+	{
+		bit = input & mask28thBit;
+		input <<= 1;
+		input += bit;
+	}
+	input = input & mask28Bits;
+
+}
+void generateRoundKey(const int& index, uint64_t& roundKey)
 {
+	uint32_t left, right;
+	uint64_t mask28Bits = 268435455; // covers first 28 bits
 
+	right = roundKey & mask28Bits;
+	mask28Bits << 28;
+	left = roundKey & mask28Bits;
+
+	leftCircularShift(left, LCS[index]);
+	leftCircularShift(right, LCS[index]);
+
+	// copying left and right shifted keys to roundKey.
+	roundKey = left;
+	roundKey <<= 28;
+	roundKey += right;
+
+	// Permutation of roundKey
+	permuteMatrix(roundKey, PC2, 48);
 }
 
-void substitute()
+void expandPermutation(uint64_t& input)
 {
-	// 
+	permuteMatrix(input, E, 48);
 }
 
-
-void mixPermutation()
+void substitute(uint64_t& input)
 {
+	uint64_t result = 0;
+	uint8_t y, x;
+	uint8_t in;
 
+	uint64_t mask = 63; mask <<= 42;
+	uint8_t maskY1, maskY2, maskX;
+	maskY1 = 1;
+	maskY2 = 32;
+	maskX = 30;
+	for (int i = 0; i < 8; i++)
+	{
+		// getting x,y coordinates for Sbox
+		in = input & mask;
+
+		x = (in & maskX)>>1;
+		y = (in & maskY2)>>4;
+		y += in & maskY1;
+
+		// Substitution 
+		result += SBoxes[i][y * 16 + x];
+
+		// next bits
+		result <<= 4;
+		mask >>= 6;
+	}
+	input = result;
 }
+
+
+void mixPermutation(uint64_t& input)
+{
+	permuteMatrix(input, PMatrix, 32);
+}
+
+
+void reverseInitialPermutation(uint64_t& input)
+{
+	permuteMatrix(input, IPInverse, 64);
+}
+
+
+void swapLR(uint64_t& input)
+{
+	uint64_t temp = input;
+	// containing left side 
+	temp >>= 32;
+	temp <<= 32;
+
+	// right side moved to left
+	input <<= 32;
+
+	// left side moved to right
+	input += temp;
+}
+
 
 // Matrix helper functions
-void permuteMatrix(uint64_t* input, unsigned int* P, unsigned int size)
+void permuteMatrix(uint64_t& input, const unsigned char* P, const unsigned int size)
 {
 	uint64_t output = 0;
 	uint64_t bit;
 
 	for (int i = 0; i < size; i++)
 	{
-		bit = (*input >> (P[i] - 1)) & 1;
+		bit = (input >> (P[i] - 1)) & 1;
 		output += bit << i;
 	}
-	*input = output;
+	input = output;
 }
 
 // Debug functions
@@ -105,7 +144,7 @@ void printMatrix(uint64_t matrix, int y, int x)
 		for (int j = 0; j < x; j++)
 		{
 
-			bit = matrix&mask;
+			bit = matrix & mask;
 			std::cout << bit << ",";
 			matrix >>= 1;
 		}
@@ -114,7 +153,7 @@ void printMatrix(uint64_t matrix, int y, int x)
 	std::cout << "Matrix printed.\n";
 }
 
-int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, int size)
+int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, const int size)
 {
 	bool bit;
 	uint64_t mask = 1;
@@ -129,11 +168,92 @@ int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, int size)
 	return 1;
 }
 
+void initDES(uint64_t& key)
+{
+	generateKey(key);
+}
 
+void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& result, uint64_t keys[16])
+{
+	uint64_t input = plaintext;
+	uint64_t roundKey = key;
+	
+	initialPermutation(input);
+	unsigned int left = 0;
+	
+	for (int i = 0; i < 16; i++)
+	{
+		// Result[63:32] = Input[31:0];
+		result = input;
+		result <<= 32;
+		// preserve left side
+		left = input >> 32;
 
+		generateRoundKey(i, roundKey);
 
+		//
+		keys[i] = roundKey; // remove later
+		//
 
+		expandPermutation(input); // 48 bits
+		input ^= roundKey;
+		substitute(input); // 32 bits
+		mixPermutation(input); 
+		result += left^input; // Result[31:0] = L XOR f[31:0];
 
+		input = result;
+	}
+	
+	swapLR(result);
+	reverseInitialPermutation(result);
+}
+
+void DecryptDES(uint64_t& encryption, uint64_t keys[16], uint64_t& decryption)
+{
+	uint64_t input = encryption;
+	uint64_t roundKey;
+	uint64_t& result = decryption;
+
+	initialPermutation(input);
+	unsigned int left = 0;
+
+	for (int i = 0; i < 16; i++)
+	{
+		// Result[63:32] = Input[31:0];
+		result = input;
+		result <<= 32;
+		// preserve left side
+		left = input >> 32;
+
+		roundKey = keys[15 - i];
+		expandPermutation(input); // 48 bits
+		input ^= roundKey;
+		substitute(input); // 32 bits
+		mixPermutation(input);
+		result += left ^ input; // Result[31:0] = L XOR f[31:0];
+
+		input = result;
+	}
+
+	swapLR(result);
+	reverseInitialPermutation(result);
+}
+
+void foo()
+{
+	uint64_t keys[16] = {9999};
+	uint64_t key;
+	uint64_t plaintext = 123456;
+	uint64_t result;
+	printMatrix(plaintext, 8, 8);
+	initDES(key);
+	EncryptDES(plaintext,key, result,keys);
+	for (int i = 0; i < 16; i++)
+		std::cout << "Key " << i << ": " << keys[i] << "\n";
+	uint64_t decryption;
+	DecryptDES(result, keys, decryption);
+	printMatrix(decryption, 8, 8);
+}
 
 
 
