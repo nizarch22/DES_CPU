@@ -278,6 +278,12 @@ void foo()
 	std::cout << "Was encryption/decryption successful? " << (bFlag ? "true" : "false") << "\n";
 	std::cout << "Average time to encrypt + decrypt: " << (timeDiff.count()*1000*1000) / numTests << "us\n";
 
+	double sizeBytes = numTests * 8;
+	double avgTime = timeDiff.count() / numTests;
+
+	double sizeGigaBytes = sizeBytes / 1e9;
+	double speed = sizeGigaBytes / avgTime;
+	std::cout << "Average speed to encrypt + decrypt: " << speed << "GBPS\n";
 	//for (int i = 0; i < 16; i++)
 	//	std::cout << "Key " << i << ": " << keys[i] << "\n";
 	// LCS test
