@@ -111,7 +111,6 @@ void swapLR(uint64_t& input)
 	uint64_t temp = input;
 	// containing left side 
 	temp >>= 32;
-	temp <<= 32;
 
 	// right side moved to left
 	input <<= 32;
