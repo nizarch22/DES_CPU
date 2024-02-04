@@ -45,7 +45,9 @@ void generateRoundKey(const int& index, uint64_t& roundKey)
 	mask28Bits <<= 28;
 	mask28Bits = roundKey & mask28Bits;
 	left = mask28Bits >> 28;
-
+	printMatrix(right, 1, 28);
+	printMatrix(left, 1, 28);
+	printMatrix(roundKey, 1, 56);
 	leftCircularShift(left, LCS[index]);
 	leftCircularShift(right, LCS[index]);
 
@@ -53,7 +55,9 @@ void generateRoundKey(const int& index, uint64_t& roundKey)
 	roundKey = left;
 	roundKey <<= 28;
 	roundKey += right;
-
+	printMatrix(right, 1, 28);
+	printMatrix(left, 1, 28);
+	printMatrix(roundKey, 1, 56);
 	// Permutation of roundKey
 	permuteMatrix(roundKey, PC2, 48);
 }
