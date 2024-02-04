@@ -45,9 +45,6 @@ void generateRoundKey(const int& index, uint64_t& roundKey)
 	mask28Bits <<= 28;
 	mask28Bits = roundKey & mask28Bits;
 	left = mask28Bits >> 28;
-	printMatrix(right, 1, 28);
-	printMatrix(left, 1, 28);
-	printMatrix(roundKey, 1, 56);
 	leftCircularShift(left, LCS[index]);
 	leftCircularShift(right, LCS[index]);
 
@@ -55,10 +52,10 @@ void generateRoundKey(const int& index, uint64_t& roundKey)
 	roundKey = left;
 	roundKey <<= 28;
 	roundKey += right;
-	printMatrix(right, 1, 28);
-	printMatrix(left, 1, 28);
-	printMatrix(roundKey, 1, 56);
-	// Permutation of roundKey
+}
+
+void roundKeyPermutation(uint64_t& roundKey)
+{
 	permuteMatrix(roundKey, PC2, 48);
 }
 
@@ -181,6 +178,7 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& result
 {
 	uint64_t input = plaintext;
 	uint64_t roundKey = key;
+	uint64_t permutedRoundKey;
 	
 	initialPermutation(input);
 	unsigned int left = 0;
@@ -198,9 +196,11 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& result
 		//
 		keys[i] = roundKey; // remove later
 		//
+		permutedRoundKey = roundKey;
+		roundKeyPermutation(permutedRoundKey);
 
 		expandPermutation(input); // 48 bits
-		input ^= roundKey;
+		input ^= permutedRoundKey;
 		substitute(input); // 32 bits
 		mixPermutation(input); 
 		result += left^input; // Result[31:0] = L XOR f[31:0];
@@ -215,7 +215,7 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& result
 void DecryptDES(uint64_t& encryption, uint64_t keys[16], uint64_t& decryption)
 {
 	uint64_t input = encryption;
-	uint64_t roundKey;
+	uint64_t roundKey, permutedRoundKey;
 	uint64_t& result = decryption;
 
 	initialPermutation(input);
@@ -231,8 +231,11 @@ void DecryptDES(uint64_t& encryption, uint64_t keys[16], uint64_t& decryption)
 		//
 		roundKey = keys[15 - i]; // remove
 		//
+		permutedRoundKey = roundKey;
+		roundKeyPermutation(permutedRoundKey);
+
 		expandPermutation(input); // 48 bits
-		input ^= roundKey;
+		input ^= permutedRoundKey;
 		substitute(input); // 32 bits
 		mixPermutation(input);
 		result += left ^ input; // Result[31:0] = L XOR f[31:0];
