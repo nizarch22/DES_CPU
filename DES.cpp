@@ -251,18 +251,28 @@ void foo()
 {
 	uint64_t keys[16] = {9999};
 	uint64_t key;
-	uint64_t plaintext = rand() | rand();
-	uint64_t result;
-	printMatrix(plaintext, 8, 8);
-	initDES(key);
-	EncryptDES(plaintext,key, result,keys);
+	uint64_t plaintext; 
+	uint64_t encryption, decryption;
+	int bFlag = 1;
+
+	// running a 100 tests on Encryption/Decryption validation on random values of plaintext.
+	//printMatrix(plaintext, 8, 8);
+	for (int i = 0; i < 100; i++)
+	{
+		plaintext = ((uint64_t)rand()) << 32 | rand();
+		initDES(key);
+		EncryptDES(plaintext, key, encryption, keys);
+		DecryptDES(encryption, keys, decryption);
+		if (!bEqualMatrix(plaintext, decryption, 64))
+		{
+			bFlag = 0;
+			break;
+		}
+	}
+	std::cout << "Was encryption/decryption successful? " << (bFlag ? "true" : "false") << "\n";
+
 	//for (int i = 0; i < 16; i++)
 	//	std::cout << "Key " << i << ": " << keys[i] << "\n";
-	uint64_t decryption;
-	DecryptDES(result, keys, decryption);
-	printMatrix(decryption, 8, 8);
-	
-	std::cout << "Was decryption successful? " << (bEqualMatrix(plaintext, decryption, 64) ? "true":"false") << "\n";
 	// LCS test
 	//uint32_t test = 1 + 2 + 4 + 8;
 	//test += 1 << 25;
