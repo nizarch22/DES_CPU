@@ -29,7 +29,7 @@ void leftCircularShift(uint32_t& input, uint8_t times)
 	uint8_t bit;
 	for (int i = 0; i < times; i++)
 	{
-		bit = input & mask28thBit;
+		bit = (input & mask28thBit)>>27;
 		input <<= 1;
 		input += bit;
 	}
@@ -42,8 +42,9 @@ void generateRoundKey(const int& index, uint64_t& roundKey)
 	uint64_t mask28Bits = 268435455; // covers first 28 bits
 
 	right = roundKey & mask28Bits;
-	mask28Bits << 28;
-	left = roundKey & mask28Bits;
+	mask28Bits <<= 28;
+	mask28Bits = roundKey & mask28Bits;
+	left = mask28Bits >> 28;
 
 	leftCircularShift(left, LCS[index]);
 	leftCircularShift(right, LCS[index]);
@@ -251,13 +252,22 @@ void foo()
 	for (int i = 0; i < 16; i++)
 		std::cout << "Key " << i << ": " << keys[i] << "\n";
 	uint64_t decryption;
-	//DecryptDES(result, keys, decryption);
-	//printMatrix(decryption, 8, 8);
-	//uint64_t plaintext = 1234;
-	//printMatrix(plaintext, 8, 8);
-	//initialPermutation(plaintext);
-	//reverseInitialPermutation(plaintext);
-	//printMatrix(plaintext, 8, 8);
+	DecryptDES(result, keys, decryption);
+	printMatrix(decryption, 8, 8);
+	
+	// LCS test
+	//uint32_t test = 1 + 2 + 4 + 8;
+	//test += 1 << 25;
+	//test += 1 << 26;
+	//printMatrix(test, 1, 28);
+	//leftCircularShift(test, 1);
+	//printMatrix(test, 1, 28);
+	//leftCircularShift(test, 1);
+	//printMatrix(test, 1, 28);
+	//leftCircularShift(test, 1);
+	//printMatrix(test, 1, 28);
+	//leftCircularShift(test, 1);
+	//printMatrix(test, 1, 28);
 }
 
 
