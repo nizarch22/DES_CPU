@@ -155,17 +155,18 @@ void printMatrix(uint64_t matrix, int y, int x)
 
 int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, const int size)
 {
-	bool bit;
-	uint64_t mask = 1;
-	for (int i = 0; i < size; i++)
-	{
-		bit = (m1 & mask) == (m2 & mask);
-		mask <<= 1;
+	//bool bit;
+	//uint64_t mask = 1;
+	//for (int i = 0; i < size; i++)
+	//{
+	//	bit = ((m1 & mask) == (m2 & mask));
+	//	mask <<= 1;
 
-		if (bit == 0)
-			return 0;
-	}
-	return 1;
+	//	if (bit == 0)
+	//		return 0;
+	//}
+	//return 1;
+	return m2 == m1;
 }
 
 void initDES(uint64_t& key)
@@ -211,7 +212,7 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& result
 	reverseInitialPermutation(result);
 }
 
-void DecryptDES(uint64_t& encryption, uint64_t keys[16], uint64_t& decryption)
+void DecryptDES(const uint64_t& encryption, const uint64_t keys[16], uint64_t& decryption)
 {
 	uint64_t input = encryption;
 	uint64_t roundKey, permutedRoundKey;
@@ -250,17 +251,18 @@ void foo()
 {
 	uint64_t keys[16] = {9999};
 	uint64_t key;
-	uint64_t plaintext = 123456;
+	uint64_t plaintext = rand() | rand();
 	uint64_t result;
 	printMatrix(plaintext, 8, 8);
 	initDES(key);
 	EncryptDES(plaintext,key, result,keys);
-	for (int i = 0; i < 16; i++)
-		std::cout << "Key " << i << ": " << keys[i] << "\n";
+	//for (int i = 0; i < 16; i++)
+	//	std::cout << "Key " << i << ": " << keys[i] << "\n";
 	uint64_t decryption;
 	DecryptDES(result, keys, decryption);
 	printMatrix(decryption, 8, 8);
 	
+	std::cout << "Was decryption successful? " << (bEqualMatrix(plaintext, decryption, 64) ? "true":"false") << "\n";
 	// LCS test
 	//uint32_t test = 1 + 2 + 4 + 8;
 	//test += 1 << 25;
