@@ -1,7 +1,9 @@
 #include <iostream>
+#include <chrono>
 #include <random>
 #include "DES.h"
 #include "DES_Matrices_NIST.h"
+
 
 // input 6: divided into V[1:0]={in5,in0} - rows, A[3:0]={in4,in3,in2} - columns. 
 // output 4 bits
@@ -249,6 +251,7 @@ void DecryptDES(const uint64_t& encryption, const uint64_t keys[16], uint64_t& d
 
 void foo()
 {
+	int numTests = 10000;
 	uint64_t keys[16] = {9999};
 	uint64_t key;
 	uint64_t plaintext; 
@@ -257,7 +260,8 @@ void foo()
 
 	// running a 100 tests on Encryption/Decryption validation on random values of plaintext.
 	//printMatrix(plaintext, 8, 8);
-	for (int i = 0; i < 100; i++)
+	auto start = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < numTests; i++)
 	{
 		plaintext = ((uint64_t)rand()) << 32 | rand();
 		initDES(key);
@@ -269,7 +273,10 @@ void foo()
 			break;
 		}
 	}
+	auto end = std::chrono::high_resolution_clock::now();
+	auto timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
 	std::cout << "Was encryption/decryption successful? " << (bFlag ? "true" : "false") << "\n";
+	std::cout << "Average time to encrypt + decrypt: " << (timeDiff.count()*1000*1000) / numTests << "us\n";
 
 	//for (int i = 0; i < 16; i++)
 	//	std::cout << "Key " << i << ": " << keys[i] << "\n";
