@@ -64,11 +64,11 @@ void expandPermutation(uint64_t& input)
 
 void substitute(uint64_t& input)
 {
-	uint64_t result = 0;
+	uint64_t result = 0; uint64_t temp;
 	uint8_t y, x;
 	uint8_t in;
 
-	uint64_t mask = 63; mask <<= 42;
+	uint64_t mask = 63;
 	uint8_t maskY1, maskY2, maskX;
 	maskY1 = 1;
 	maskY2 = 32;
@@ -77,17 +77,16 @@ void substitute(uint64_t& input)
 	{
 		// getting x,y coordinates for Sbox
 		in = input & mask;
-
 		x = (in & maskX)>>1;
 		y = (in & maskY2)>>4;
 		y += in & maskY1;
 
 		// Substitution 
-		result += SBoxes[i][y * 16 + x];
+		temp = SBoxes[i][y * 16 + x];
+		result += temp << (4*i);
 
 		// next bits
-		result <<= 4;
-		mask >>= 6;
+		input >>= 6;
 	}
 	input = result;
 }
@@ -224,8 +223,9 @@ void DecryptDES(uint64_t& encryption, uint64_t keys[16], uint64_t& decryption)
 		result <<= 32;
 		// preserve left side
 		left = input >> 32;
-
-		roundKey = keys[15 - i];
+		//
+		roundKey = keys[15 - i]; // remove
+		//
 		expandPermutation(input); // 48 bits
 		input ^= roundKey;
 		substitute(input); // 32 bits
@@ -251,8 +251,13 @@ void foo()
 	for (int i = 0; i < 16; i++)
 		std::cout << "Key " << i << ": " << keys[i] << "\n";
 	uint64_t decryption;
-	DecryptDES(result, keys, decryption);
-	printMatrix(decryption, 8, 8);
+	//DecryptDES(result, keys, decryption);
+	//printMatrix(decryption, 8, 8);
+	//uint64_t plaintext = 1234;
+	//printMatrix(plaintext, 8, 8);
+	//initialPermutation(plaintext);
+	//reverseInitialPermutation(plaintext);
+	//printMatrix(plaintext, 8, 8);
 }
 
 
