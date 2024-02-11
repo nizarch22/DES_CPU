@@ -3,6 +3,7 @@
 #include <random>
 #include "DES.h"
 #include "DES_Matrices_NIST.h"
+#include <future> // multithreading
 
 
 // input 6: divided into V[1:0]={in5,in0} - rows, A[3:0]={in4,in3,in2} - columns. 
@@ -43,10 +44,13 @@ void generateRoundKey(const int& index, uint64_t& roundKey)
 	uint32_t left, right;
 	uint64_t mask28Bits = 268435455; // covers first 28 bits
 
+	// getting left and right sides
 	right = roundKey & mask28Bits;
 	mask28Bits <<= 28;
 	mask28Bits = roundKey & mask28Bits;
 	left = mask28Bits >> 28;
+
+	// circular shifts
 	leftCircularShift(left, LCS[index]);
 	leftCircularShift(right, LCS[index]);
 
@@ -54,6 +58,42 @@ void generateRoundKey(const int& index, uint64_t& roundKey)
 	roundKey = left;
 	roundKey <<= 28;
 	roundKey += right;
+}
+
+void generateReverseRoundKey(const int& index, uint64_t& roundKey)
+{
+	uint32_t left, right;
+	uint64_t mask28Bits = 268435455; // covers first 28 bits
+
+	// getting left and right sides
+	right = roundKey & mask28Bits;
+	mask28Bits <<= 28;
+	mask28Bits = roundKey & mask28Bits;
+	left = mask28Bits >> 28;
+
+	// circular shifts
+	leftCircularShift(left, LCS[index]);
+	leftCircularShift(right, LCS[index]);
+
+	// copying left and right shifted keys to roundKey.
+	roundKey = left;
+	roundKey <<= 28;
+	roundKey += right;
+}
+
+void initialReverseKeyShift(uint64_t& roundKey)
+{
+	uint32_t left, right;
+	uint64_t mask28Bits = 268435455; // covers first 28 bits
+
+	// getting left and right sides
+	right = roundKey & mask28Bits;
+	mask28Bits <<= 28;
+	mask28Bits = roundKey & mask28Bits;
+	left = mask28Bits >> 28;
+
+
+
 }
 
 void roundKeyPermutation(uint64_t& roundKey)
@@ -249,6 +289,18 @@ void DecryptDES(const uint64_t& encryption, const uint64_t keys[16], uint64_t& d
 	reverseInitialPermutation(result);
 }
 
+
+// multithreaded programming
+static void encryptDecryptAsync(uint64_t plaintext, uint64_t key, )
+{
+
+}
+
+static void decryptDESAsync()
+{
+
+}
+
 void foo()
 {
 	int numTests = 10000;
@@ -265,8 +317,10 @@ void foo()
 	{
 		plaintext = ((uint64_t)rand()) << 32 | rand();
 		initDES(key);
+
 		EncryptDES(plaintext, key, encryption, keys);
 		DecryptDES(encryption, keys, decryption);
+
 		if (!bEqualMatrix(plaintext, decryption, 64))
 		{
 			bFlag = 0;
@@ -284,21 +338,14 @@ void foo()
 	double sizeGigaBytes = sizeBytes / 1e9;
 	double speed = sizeGigaBytes / avgTime;
 	std::cout << "Average speed to encrypt + decrypt: " << speed << "GBPS\n";
-	//for (int i = 0; i < 16; i++)
-	//	std::cout << "Key " << i << ": " << keys[i] << "\n";
-	// LCS test
-	//uint32_t test = 1 + 2 + 4 + 8;
-	//test += 1 << 25;
-	//test += 1 << 26;
-	//printMatrix(test, 1, 28);
-	//leftCircularShift(test, 1);
-	//printMatrix(test, 1, 28);
-	//leftCircularShift(test, 1);
-	//printMatrix(test, 1, 28);
-	//leftCircularShift(test, 1);
-	//printMatrix(test, 1, 28);
-	//leftCircularShift(test, 1);
-	//printMatrix(test, 1, 28);
+
+
+
+
+
+	// multithread
+
+
 }
 
 
