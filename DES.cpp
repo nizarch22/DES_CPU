@@ -337,7 +337,7 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 // Testing function
 void foo()
 {
-	int numTests = 10000;
+	int numTests = 524288;
 	uint64_t keys[16] = {9999};
 	uint64_t key;
 	uint64_t plaintext; 
@@ -345,7 +345,6 @@ void foo()
 	int bFlag = 1;
 
 	// running a 100 tests on Encryption/Decryption validation on random values of plaintext.
-	//printMatrix(plaintext, 8, 8);
 	auto start = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < numTests; i++)
 	{
@@ -355,7 +354,7 @@ void foo()
 		EncryptDES(plaintext, key, encryption);
 		DecryptDES(encryption, key, decryption);
 
-		if (!bEqualMatrix(plaintext, decryption, 64))
+		if (plaintext!=decryption)
 		{
 			bFlag = 0;
 			break;
@@ -366,11 +365,11 @@ void foo()
 	std::cout << "Was encryption/decryption successful? " << (bFlag ? "true" : "false") << "\n";
 	std::cout << "Average time to encrypt + decrypt: " << (timeDiff.count()*1000*1000) / numTests << "us\n";
 
-	double sizeBytes = numTests * 8;
+	double sizeBytes = numTests * 8; // 8 bytes of plaintext
 	double avgTime = timeDiff.count() / numTests;
 
-	double sizeGigaBytes = sizeBytes / 1e9;
-	double speed = sizeGigaBytes / avgTime;
+	double sizeGigaBytes = sizeBytes / 1073741824;
+	double speed = sizeGigaBytes / (timeDiff.count());
 	std::cout << "Average speed to encrypt + decrypt: " << speed << "GBPS\n";
 
 	// multithread
