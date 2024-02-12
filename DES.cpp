@@ -3,7 +3,6 @@
 #include <random>
 #include "DES.h"
 #include "DES_Matrices_NIST.h"
-#include <future> // multithreading
 
 
 // input 6: divided into V[1:0]={in5,in0} - rows, A[3:0]={in4,in3,in2} - columns. 
@@ -335,43 +334,7 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 }
 
 
-// multithreaded programming
-static void encryptDecryptAsync(uint64_t plaintext, uint64_t key)
-{
-
-}
-
-static void decryptDESAsync()
-{
-
-}
-
-void bar(uint64_t& roundKey)
-{
-	uint32_t left, right;
-	uint64_t mask28Bits = 268435455; // covers first 28 bits
-
-	// getting left and right sides
-	right = roundKey & mask28Bits;
-	mask28Bits <<= 28;
-	mask28Bits = roundKey & mask28Bits;
-	left = mask28Bits >> 28;
-
-	uint32_t numShifts = 0;
-	for (int i = 0; i < 16; i++)
-	{
-		numShifts += LCS[i];
-	}
-	// circular shifts
-	rightCircularShift(left, numShifts);
-	rightCircularShift(right, numShifts);
-
-	// copying left and right shifted keys to roundKey.
-	roundKey = left;
-	roundKey <<= 28;
-	roundKey += right;
-}
-
+// Testing function
 void foo()
 {
 	int numTests = 10000;
