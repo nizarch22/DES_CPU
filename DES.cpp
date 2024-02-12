@@ -3,6 +3,8 @@
 #include <random>
 #include "DES.h"
 #include "DES_Matrices_NIST.h"
+#include <future>
+#include <vector>
 
 // auxiliary functions
 void initialPermutation(uint64_t& input)
@@ -223,9 +225,9 @@ void InitKeyDES(uint64_t& key)
 	generateKey(key);
 }
 
-void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& decryption)
+void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& encryption)
 {
-	uint64_t& result = decryption; // setting alias for decryption
+	uint64_t& result = encryption; // setting alias for encryption
 
 	uint64_t input = plaintext;
 	uint64_t roundKey = key;
@@ -311,46 +313,107 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 	reverseInitialPermutation(result);
 }
 
+// multi-threading functions
+
+static void EncryptDESAsync(uint64_t plaintext, uint64_t key, uint64_t* result)
+{
+	uint64_t encryption;
+	EncryptDES(plaintext, key,encryption);
+	*result = encryption;
+}
+
+static void DecryptDESAsync(uint64_t encryption, uint64_t key, uint64_t* result)
+{
+	uint64_t decryption;
+	DecryptDES(encryption, key, decryption);
+	*result = decryption;
+}
+
+
 
 // Testing function
 void foo()
 {
-	int numTests = 524288;
-	uint64_t keys[16] = {9999};
-	uint64_t key;
-	uint64_t plaintext; 
+	int numTests = 1000;
+	//uint64_t key;
+	//uint64_t plaintext; 
 	uint64_t encryption, decryption;
 	int bFlag = 1;
+
+	// setup keys and plaintexts
+	uint64_t* msgs = new uint64_t[numTests];
+	uint64_t* keys = new uint64_t[numTests];
+	uint64_t* encryptions = new uint64_t[numTests];
+	uint64_t* decryptions = new uint64_t[numTests];
+	std::vector<std::future<void>> futures;
+	for (int i = 0; i < numTests; i++)
+	{
+		msgs[i] = ((uint64_t)rand()) << 32 | rand();
+		InitKeyDES(keys[i]);
+	}
+
 
 	// running a 100 tests on Encryption/Decryption validation on random values of plaintext.
 	auto start = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < numTests; i++)
 	{
-		plaintext = ((uint64_t)rand()) << 32 | rand();
-		InitKeyDES(key);
+		//EncryptDESAsync(msgs[i], keys[i], &encryptions[i]);
+		futures.push_back(std::async(std::launch::async, EncryptDESAsync, msgs[i], keys[i], &encryptions[i]));
+		//EncryptDES(plaintext, key, encryption);
+	}
+	auto end = std::chrono::high_resolution_clock::now();
 
-		EncryptDES(plaintext, key, encryption);
-		DecryptDES(encryption, key, decryption);
 
-		if (plaintext!=decryption)
+	// wait for all threads to end
+	for (int i = 0; i < numTests; i++)
+	{
+		futures[i].wait();
+	}
+
+
+	// timeDiff calculation
+	auto timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+	double timeSpan = timeDiff.count();
+
+	start = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < numTests; i++)
+	{
+		//DecryptDESAsync(encryptions[i], keys[i], &decryptions[i]);
+		futures.push_back(std::async(std::launch::async, DecryptDESAsync, encryptions[i], keys[i], &decryptions[i]));
+		//DecryptDES(encryption, key, decryption);
+	}
+	end = std::chrono::high_resolution_clock::now();
+
+	// wait for all threads to end
+	for (int i = 0; i < numTests; i++)
+	{
+		futures[i].wait();
+	}
+
+	// compare decryption
+
+	for (int i = 0; i < numTests; i++)
+	{
+		if (msgs[i] != decryptions[i])
 		{
 			bFlag = 0;
 			break;
 		}
 	}
-	auto end = std::chrono::high_resolution_clock::now();
-	auto timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+
+
+	timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+	timeSpan += timeDiff.count();
+
 	std::cout << "Was encryption/decryption successful? " << (bFlag ? "true" : "false") << "\n";
-	std::cout << "Average time to encrypt + decrypt: " << (timeDiff.count()*1000*1000) / numTests << "us\n";
-	std::cout << "Total time to encrypt + decrypt: " << (timeDiff.count()) / numTests << "s\n";
+	std::cout << "Average time to encrypt + decrypt: " << (timeSpan *1000*1000) / numTests << "us\n";
+	std::cout << "Total time to encrypt + decrypt: " << (timeSpan) / numTests << "s\n";
 	double sizeBytes = numTests * 8; // 8 bytes of plaintext
-	double avgTime = timeDiff.count() / numTests;
+	double avgTime = timeSpan / numTests;
 
 	double sizeGigaBytes = sizeBytes / 1073741824;
-	double speed = sizeGigaBytes / (timeDiff.count());
+	double speed = sizeGigaBytes / timeSpan;
 	std::cout << "Average speed to encrypt + decrypt: " << speed << "GBPS\n";
-
-	// multithread
 
 
 }
