@@ -4,25 +4,17 @@
 #include "DES.h"
 #include "DES_Matrices_NIST.h"
 
-
-// input 6: divided into V[1:0]={in5,in0} - rows, A[3:0]={in4,in3,in2} - columns. 
-// output 4 bits
-
 // auxiliary functions
-
 void initialPermutation(uint64_t& input)
 {
 	permuteMatrix(input, IP, 64);
 }
-
-
 void generateKey(uint64_t& key)
 {
 	// 64 bits
 	key = ((uint64_t)rand()) << 32 | rand();
 	permuteMatrix(key, PC1, 56);
 }
-
 void leftCircularShift(uint32_t& input, uint8_t times)
 {
 	uint32_t mask28thBit = 1 << 27; // 28th bit
@@ -38,7 +30,6 @@ void leftCircularShift(uint32_t& input, uint8_t times)
 	input = input & mask28Bits;
 
 }
-
 void rightCircularShift(uint32_t& input, uint8_t times)
 {
 	uint32_t bit28th = 1 << 27; // 28th bit
@@ -75,7 +66,6 @@ void generateRoundKey(const int& index, uint64_t& roundKey)
 	roundKey <<= 28;
 	roundKey += right;
 }
-
 void generateReverseRoundKey(const int& index, uint64_t& roundKey)
 {
 	uint32_t left, right;
@@ -96,9 +86,8 @@ void generateReverseRoundKey(const int& index, uint64_t& roundKey)
 	roundKey <<= 28;
 	roundKey += right;
 }
-
-// Preemptively shifting all keys to left.
-void initialReverseKeyShift(uint64_t& roundKey)
+// Preemptively shifting all keys using LCS matrix.
+void fullShiftLCS(uint64_t& roundKey)
 {
 	uint32_t left, right;
 	uint64_t mask28Bits = 268435455; // covers first 28 bits
@@ -123,17 +112,14 @@ void initialReverseKeyShift(uint64_t& roundKey)
 	roundKey <<= 28;
 	roundKey += right;
 }
-
 void roundKeyPermutation(uint64_t& roundKey)
 {
 	permuteMatrix(roundKey, PC2, 48);
 }
-
 void expandPermutation(uint64_t& input)
 {
 	permuteMatrix(input, E, 48);
 }
-
 void substitute(uint64_t& input)
 {
 	uint64_t result = 0; uint64_t temp;
@@ -162,21 +148,15 @@ void substitute(uint64_t& input)
 	}
 	input = result;
 }
-
-
 void mixPermutation(uint64_t& input)
 {
 	permuteMatrix(input, PMatrix, 32);
 }
-
-
 void reverseInitialPermutation(uint64_t& input)
 {
 	permuteMatrix(input, IPInverse, 64);
 }
-
-
-void swapLR(uint64_t& input)
+void swapLR(uint64_t& input) // Swap left (32 bit) and right (32 bit) parts of the 64 bit input.
 {
 	uint64_t temp = input;
 	// containing left side 
@@ -188,7 +168,6 @@ void swapLR(uint64_t& input)
 	// left side moved to right
 	input += temp;
 }
-
 
 // Matrix helper functions
 void permuteMatrix(uint64_t& input, const unsigned char* P, const unsigned int size)
@@ -222,7 +201,6 @@ void printMatrix(uint64_t matrix, int y, int x)
 	}
 	std::cout << "Matrix printed.\n";
 }
-
 int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, const int size)
 {
 	//bool bit;
@@ -239,7 +217,8 @@ int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, const int size)
 	return m2 == m1;
 }
 
-void initKeyDES(uint64_t& key)
+// Essential functions
+void InitKeyDES(uint64_t& key)
 {
 	generateKey(key);
 }
@@ -288,7 +267,6 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& decryp
 	swapLR(result);
 	reverseInitialPermutation(result);
 }
-
 void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decryption)
 {
 	uint64_t input = encryption;
@@ -298,7 +276,7 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 	uint64_t left;
 
 	// initial operations
-	initialReverseKeyShift(roundKey);
+	fullShiftLCS(roundKey);
 	initialPermutation(input);
 
 	for (int i = 0; i < 16; i++)
@@ -349,7 +327,7 @@ void foo()
 	for (int i = 0; i < numTests; i++)
 	{
 		plaintext = ((uint64_t)rand()) << 32 | rand();
-		initKeyDES(key);
+		InitKeyDES(key);
 
 		EncryptDES(plaintext, key, encryption);
 		DecryptDES(encryption, key, decryption);
@@ -364,7 +342,7 @@ void foo()
 	auto timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
 	std::cout << "Was encryption/decryption successful? " << (bFlag ? "true" : "false") << "\n";
 	std::cout << "Average time to encrypt + decrypt: " << (timeDiff.count()*1000*1000) / numTests << "us\n";
-
+	std::cout << "Total time to encrypt + decrypt: " << (timeDiff.count()) / numTests << "s\n";
 	double sizeBytes = numTests * 8; // 8 bytes of plaintext
 	double avgTime = timeDiff.count() / numTests;
 
