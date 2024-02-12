@@ -1,7 +1,7 @@
 #pragma once
 
-void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& result, uint64_t keys[16]);
-void DecryptDES(const uint64_t& encryption, const uint64_t keys[16], uint64_t& decryption);
+void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& encryption);
+void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decryption);
 
 // debug functions
 void printMatrix(uint64_t matrix, int y, int x);

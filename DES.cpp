@@ -39,6 +39,23 @@ void leftCircularShift(uint32_t& input, uint8_t times)
 	input = input & mask28Bits;
 
 }
+
+void rightCircularShift(uint32_t& input, uint8_t times)
+{
+	uint32_t bit28th = 1 << 27; // 28th bit
+	uint32_t mask1stBit = 1; // 28th bit
+	uint32_t mask28Bits = 268435455; // covers first 28 bits
+
+	uint32_t bit;
+	for (int i = 0; i < times; i++)
+	{
+		bit = (input & mask1stBit);
+		input >>= 1;
+		input += bit * bit28th;
+	}
+	input = input & mask28Bits;
+
+}
 void generateRoundKey(const int& index, uint64_t& roundKey)
 {
 	uint32_t left, right;
@@ -72,8 +89,8 @@ void generateReverseRoundKey(const int& index, uint64_t& roundKey)
 	left = mask28Bits >> 28;
 
 	// circular shifts
-	leftCircularShift(left, LCS[index]);
-	leftCircularShift(right, LCS[index]);
+	rightCircularShift(left, LCS[15-index]);
+	rightCircularShift(right, LCS[15-index]);
 
 	// copying left and right shifted keys to roundKey.
 	roundKey = left;
@@ -81,6 +98,7 @@ void generateReverseRoundKey(const int& index, uint64_t& roundKey)
 	roundKey += right;
 }
 
+// Preemptively shifting all keys to left.
 void initialReverseKeyShift(uint64_t& roundKey)
 {
 	uint32_t left, right;
@@ -92,8 +110,19 @@ void initialReverseKeyShift(uint64_t& roundKey)
 	mask28Bits = roundKey & mask28Bits;
 	left = mask28Bits >> 28;
 
+	uint32_t numShifts = 0;
+	for (int i = 0; i < 16; i++)
+	{
+		numShifts += LCS[i];
+	}
+	// circular shifts
+	leftCircularShift(left,numShifts);
+	leftCircularShift(right, numShifts);
 
-
+	// copying left and right shifted keys to roundKey.
+	roundKey = left;
+	roundKey <<= 28;
+	roundKey += right;
 }
 
 void roundKeyPermutation(uint64_t& roundKey)
@@ -211,20 +240,22 @@ int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, const int size)
 	return m2 == m1;
 }
 
-void initDES(uint64_t& key)
+void initKeyDES(uint64_t& key)
 {
 	generateKey(key);
 }
 
-void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& result, uint64_t keys[16])
+void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& decryption)
 {
+	uint64_t& result = decryption; // setting alias for decryption
+
 	uint64_t input = plaintext;
 	uint64_t roundKey = key;
 	uint64_t permutedRoundKey;
-	
+	uint64_t left; // last 32 bits of plaintext/input to algorithm are preserved in this variable 
+
 	initialPermutation(input);
-	unsigned int left = 0;
-	
+
 	for (int i = 0; i < 16; i++)
 	{
 		// Result[63:32] = Input[31:0];
@@ -233,35 +264,43 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& result
 		// preserve left side
 		left = input >> 32;
 
+		// round key
 		generateRoundKey(i, roundKey);
-
-		//
-		keys[i] = roundKey; // remove later
-		//
 		permutedRoundKey = roundKey;
 		roundKeyPermutation(permutedRoundKey);
 
+		// Expansion permutation
 		expandPermutation(input); // 48 bits
+
+		// XOR with permuted round key
 		input ^= permutedRoundKey;
+
+		// Substitution S-boxes
 		substitute(input); // 32 bits
+		
+		// "P-matrix" permutation i.e. mix/shuffle
 		mixPermutation(input); 
+
 		result += left^input; // Result[31:0] = L XOR f[31:0];
 
 		input = result;
 	}
-	
+
 	swapLR(result);
 	reverseInitialPermutation(result);
 }
 
-void DecryptDES(const uint64_t& encryption, const uint64_t keys[16], uint64_t& decryption)
+void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decryption)
 {
 	uint64_t input = encryption;
-	uint64_t roundKey, permutedRoundKey;
+	uint64_t roundKey = key;
+	uint64_t permutedRoundKey;
 	uint64_t& result = decryption;
+	uint64_t left;
 
+	// initial operations
+	initialReverseKeyShift(roundKey);
 	initialPermutation(input);
-	unsigned int left = 0;
 
 	for (int i = 0; i < 16; i++)
 	{
@@ -270,15 +309,21 @@ void DecryptDES(const uint64_t& encryption, const uint64_t keys[16], uint64_t& d
 		result <<= 32;
 		// preserve left side
 		left = input >> 32;
-		//
-		roundKey = keys[15 - i]; // remove
-		//
+
+		// round key
 		permutedRoundKey = roundKey;
 		roundKeyPermutation(permutedRoundKey);
+		generateReverseRoundKey(i, roundKey);
 
+		// Expansion
 		expandPermutation(input); // 48 bits
+		// XOR with key
 		input ^= permutedRoundKey;
+
+		// Substitution 
 		substitute(input); // 32 bits
+
+		// "P matrix" permutation i.e. shuffle/mix permutation
 		mixPermutation(input);
 		result += left ^ input; // Result[31:0] = L XOR f[31:0];
 
@@ -291,7 +336,7 @@ void DecryptDES(const uint64_t& encryption, const uint64_t keys[16], uint64_t& d
 
 
 // multithreaded programming
-static void encryptDecryptAsync(uint64_t plaintext, uint64_t key, )
+static void encryptDecryptAsync(uint64_t plaintext, uint64_t key)
 {
 
 }
@@ -299,6 +344,32 @@ static void encryptDecryptAsync(uint64_t plaintext, uint64_t key, )
 static void decryptDESAsync()
 {
 
+}
+
+void bar(uint64_t& roundKey)
+{
+	uint32_t left, right;
+	uint64_t mask28Bits = 268435455; // covers first 28 bits
+
+	// getting left and right sides
+	right = roundKey & mask28Bits;
+	mask28Bits <<= 28;
+	mask28Bits = roundKey & mask28Bits;
+	left = mask28Bits >> 28;
+
+	uint32_t numShifts = 0;
+	for (int i = 0; i < 16; i++)
+	{
+		numShifts += LCS[i];
+	}
+	// circular shifts
+	rightCircularShift(left, numShifts);
+	rightCircularShift(right, numShifts);
+
+	// copying left and right shifted keys to roundKey.
+	roundKey = left;
+	roundKey <<= 28;
+	roundKey += right;
 }
 
 void foo()
@@ -316,10 +387,10 @@ void foo()
 	for (int i = 0; i < numTests; i++)
 	{
 		plaintext = ((uint64_t)rand()) << 32 | rand();
-		initDES(key);
+		initKeyDES(key);
 
-		EncryptDES(plaintext, key, encryption, keys);
-		DecryptDES(encryption, keys, decryption);
+		EncryptDES(plaintext, key, encryption);
+		DecryptDES(encryption, key, decryption);
 
 		if (!bEqualMatrix(plaintext, decryption, 64))
 		{
@@ -338,10 +409,6 @@ void foo()
 	double sizeGigaBytes = sizeBytes / 1e9;
 	double speed = sizeGigaBytes / avgTime;
 	std::cout << "Average speed to encrypt + decrypt: " << speed << "GBPS\n";
-
-
-
-
 
 	// multithread
 
