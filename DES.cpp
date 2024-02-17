@@ -316,7 +316,7 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 }
 
 // multi-threading functions
-int numTests = 1000;
+int numTests = 131072;
 //uint64_t key;
 //uint64_t plaintext; 
 //uint64_t encryption, decryption;
