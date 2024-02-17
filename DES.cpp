@@ -316,7 +316,6 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 void foo()
 {
 	int numTests = 131072;
-	uint64_t keys[16] = {9999};
 	uint64_t key;
 	uint64_t plaintext; 
 	uint64_t encryption, decryption;
