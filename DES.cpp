@@ -315,7 +315,7 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 // Testing function
 void foo()
 {
-	int numTests = 524288;
+	int numTests = 131072;
 	uint64_t keys[16] = {9999};
 	uint64_t key;
 	uint64_t plaintext; 
@@ -340,14 +340,16 @@ void foo()
 	}
 	auto end = std::chrono::high_resolution_clock::now();
 	auto timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-	std::cout << "Was encryption/decryption successful? " << (bFlag ? "true" : "false") << "\n";
-	std::cout << "Average time to encrypt + decrypt: " << (timeDiff.count()*1000*1000) / numTests << "us\n";
-	std::cout << "Total time to encrypt + decrypt: " << (timeDiff.count()) / numTests << "s\n";
+
 	double sizeBytes = numTests * 8; // 8 bytes of plaintext
 	double avgTime = timeDiff.count() / numTests;
-
 	double sizeGigaBytes = sizeBytes / 1073741824;
 	double speed = sizeGigaBytes / (timeDiff.count());
+
+	std::cout << "Was encryption/decryption successful? " << (bFlag ? "true" : "false") << "\n";
+	std::cout << "Total time to encrypt + decrypt: " << timeDiff.count() << "s\n";
+	std::cout << "Total bytes (encrypted+decrypted): " << sizeBytes << " bytes\n";
+	std::cout << "Average time to encrypt + decrypt: " << (timeDiff.count()*1000*1000) / numTests << "us\n";
 	std::cout << "Average speed to encrypt + decrypt: " << speed << "GBPS\n";
 
 	// multithread
