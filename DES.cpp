@@ -334,7 +334,7 @@ static void EncryptDESAsync(uint64_t plaintext, uint64_t key, uint64_t* result)
 {
 	uint64_t encryption;
 	EncryptDES(plaintext, key,encryption);
-	std::lock_guard<std::mutex> lock(mutexEncrypt);
+	//std::lock_guard<std::mutex> lock(mutexEncrypt);
 	*result = encryption;
 }
 
@@ -342,7 +342,7 @@ static void DecryptDESAsync(uint64_t encryption, uint64_t key, uint64_t* result)
 {
 	uint64_t decryption;
 	DecryptDES(encryption, key, decryption);
-	std::lock_guard<std::mutex> lock(mutexDecrypt);
+	//std::lock_guard<std::mutex> lock(mutexDecrypt);
 	*result = decryption;
 }
 
