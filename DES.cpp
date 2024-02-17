@@ -225,6 +225,8 @@ void InitKeyDES(uint64_t& key)
 	generateKey(key);
 }
 
+
+
 void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& encryption)
 {
 	uint64_t& result = encryption; // setting alias for encryption
@@ -314,11 +316,25 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 }
 
 // multi-threading functions
+int numTests = 1000;
+//uint64_t key;
+//uint64_t plaintext; 
+//uint64_t encryption, decryption;
+int bFlag = 1;
+
+// setup keys and plaintexts
+uint64_t* msgs = new uint64_t[numTests];
+uint64_t* keys = new uint64_t[numTests];
+uint64_t* encryptions = new uint64_t[numTests];
+uint64_t* decryptions = new uint64_t[numTests];
+
+static std::mutex mut;
 
 static void EncryptDESAsync(uint64_t plaintext, uint64_t key, uint64_t* result)
 {
 	uint64_t encryption;
 	EncryptDES(plaintext, key,encryption);
+	std::lock_guard<std::mutex> lock(mut);
 	*result = encryption;
 }
 
@@ -326,6 +342,7 @@ static void DecryptDESAsync(uint64_t encryption, uint64_t key, uint64_t* result)
 {
 	uint64_t decryption;
 	DecryptDES(encryption, key, decryption);
+	std::lock_guard<std::mutex> lock(mut);
 	*result = decryption;
 }
 
@@ -334,17 +351,17 @@ static void DecryptDESAsync(uint64_t encryption, uint64_t key, uint64_t* result)
 // Testing function
 void foo()
 {
-	int numTests = 1000;
+	//int numTests = 1000;
 	//uint64_t key;
 	//uint64_t plaintext; 
-	uint64_t encryption, decryption;
+	//uint64_t encryption, decryption;
 	int bFlag = 1;
 
 	// setup keys and plaintexts
-	uint64_t* msgs = new uint64_t[numTests];
-	uint64_t* keys = new uint64_t[numTests];
-	uint64_t* encryptions = new uint64_t[numTests];
-	uint64_t* decryptions = new uint64_t[numTests];
+	//uint64_t* msgs = new uint64_t[numTests];
+	//uint64_t* keys = new uint64_t[numTests];
+	//uint64_t* encryptions = new uint64_t[numTests];
+	//uint64_t* decryptions = new uint64_t[numTests];
 	std::vector<std::future<void>> futures;
 	for (int i = 0; i < numTests; i++)
 	{
@@ -401,13 +418,12 @@ void foo()
 		}
 	}
 
-
 	timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
 	timeSpan += timeDiff.count();
 
 	std::cout << "Was encryption/decryption successful? " << (bFlag ? "true" : "false") << "\n";
 	std::cout << "Average time to encrypt + decrypt: " << (timeSpan *1000*1000) / numTests << "us\n";
-	std::cout << "Total time to encrypt + decrypt: " << (timeSpan) / numTests << "s\n";
+	std::cout << "Total time to encrypt + decrypt: " << timeSpan << "s\n";
 	double sizeBytes = numTests * 8; // 8 bytes of plaintext
 	double avgTime = timeSpan / numTests;
 
