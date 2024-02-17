@@ -369,7 +369,7 @@ void foo()
 		InitKeyDES(keys[i]);
 	}
 
-
+	auto veryStart = std::chrono::high_resolution_clock::now();
 	// running a 100 tests on Encryption/Decryption validation on random values of plaintext.
 	auto start = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < numTests; i++)
@@ -400,7 +400,7 @@ void foo()
 		//DecryptDES(encryption, key, decryption);
 	}
 	end = std::chrono::high_resolution_clock::now();
-
+	auto veryEnd = std::chrono::high_resolution_clock::now();
 	// wait for all threads to end
 	for (int i = 0; i < numTests; i++)
 	{
@@ -420,17 +420,20 @@ void foo()
 
 	timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
 	timeSpan += timeDiff.count();
+	auto totalTimeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(veryEnd - veryStart);
 
 	std::cout << "Was encryption/decryption successful? " << (bFlag ? "true" : "false") << "\n";
 	std::cout << "Average time to encrypt + decrypt: " << (timeSpan *1000*1000) / numTests << "us\n";
 	std::cout << "Total time to encrypt + decrypt: " << timeSpan << "s\n";
+	std::cout << "Total time (with waiting) to encrypt + decrypt: " << totalTimeDiff.count() << "s\n";
 	double sizeBytes = numTests * 8; // 8 bytes of plaintext
 	double avgTime = timeSpan / numTests;
 
-	double sizeGigaBytes = sizeBytes / 1073741824;
-	double speed = sizeGigaBytes / timeSpan;
-	std::cout << "Average speed to encrypt + decrypt: " << speed << "GBPS\n";
-
+	double sizeMegaBytes = sizeBytes / 1048576;
+	double speed = sizeMegaBytes / timeSpan;
+	double totalSpeed = sizeMegaBytes / totalTimeDiff.count();
+	std::cout << "Average speed to encrypt + decrypt: " << speed << "MBPS\n";
+	std::cout << "Total speed (with waiting) to encrypt + decrypt: " << totalSpeed << "MBPS\n";
 
 }
 
