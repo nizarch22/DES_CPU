@@ -315,25 +315,25 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 // Testing function
 void foo()
 {
-	const int numTests = 524288; // number of tests to get 8MB of 
+	const int numTests = 524288; // number of tests to generate 4MB of plaintext.
 	uint64_t key;
 	uint64_t plaintext; 
 	uint64_t encryption, decryption;
 	uint64_t* plaintexts = new uint64_t[numTests];
 	int bFlag = 0;
 
+	//prep plaintexts
 	for (int i = 0; i < numTests; i++)
 	{
 		plaintexts[i] = ((uint64_t)rand()) << 32 | rand();
 	}
 
-	// running a 100 tests on Encryption/Decryption validation on random values of plaintext.
+	// running tests on Encryption/Decryption validation on random values of plaintext.
 	auto start = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < numTests; i++)
 	{
 		plaintext = plaintexts[i];
 		InitKeyDES(key);
-
 		EncryptDES(plaintext, key, encryption);
 		DecryptDES(encryption, key, decryption);
 
