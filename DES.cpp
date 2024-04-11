@@ -315,17 +315,23 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 // Testing function
 void foo()
 {
-	int numTests = 131072;
+	const int numTests = 524288; // number of tests to get 8MB of 
 	uint64_t key;
 	uint64_t plaintext; 
 	uint64_t encryption, decryption;
-	int bFlag = 1;
+	uint64_t* plaintexts = new uint64_t[numTests];
+	int bFlag = 0;
+
+	for (int i = 0; i < numTests; i++)
+	{
+		plaintexts[i] = ((uint64_t)rand()) << 32 | rand();
+	}
 
 	// running a 100 tests on Encryption/Decryption validation on random values of plaintext.
 	auto start = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < numTests; i++)
 	{
-		plaintext = ((uint64_t)rand()) << 32 | rand();
+		plaintext = plaintexts[i];
 		InitKeyDES(key);
 
 		EncryptDES(plaintext, key, encryption);
@@ -333,7 +339,7 @@ void foo()
 
 		if (plaintext!=decryption)
 		{
-			bFlag = 0;
+			bFlag = 1;
 			break;
 		}
 	}
@@ -345,7 +351,7 @@ void foo()
 	double sizeMegaBytes = sizeBytes / 1048576;
 	double speed = sizeMegaBytes / (timeDiff.count());
 
-	std::cout << "Was encryption/decryption successful? " << (bFlag ? "true" : "false") << "\n";
+	std::cout << "Was encryption/decryption successful? " << (bFlag ? "false" : "true") << "\n";
 	std::cout << "Total time to encrypt + decrypt: " << timeDiff.count() << "s\n";
 	std::cout << "Total bytes (encrypted+decrypted): " << sizeBytes << " bytes\n";
 	std::cout << "Average time to encrypt + decrypt: " << (timeDiff.count()*1000*1000) / numTests << "us\n";
