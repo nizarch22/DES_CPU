@@ -88,7 +88,7 @@ void generateReverseRoundKey(const int& index, uint64_t& roundKey)
 	roundKey <<= 28;
 	roundKey += right;
 }
-// Preemptively shifting all keys using LCS matrix.
+// Preemptively shifting all keys using LCS matrix. This is intended for decryption.
 void fullShiftLCS(uint64_t& roundKey)
 {
 	uint32_t left, right;
@@ -320,15 +320,14 @@ int numTests = 131072;
 //uint64_t key;
 //uint64_t plaintext; 
 //uint64_t encryption, decryption;
-int bFlag = 1;
+uint8_t bFlag = 1;
 
 // setup keys and plaintexts
-uint64_t* msgs = new uint64_t[numTests];
-uint64_t* keys = new uint64_t[numTests];
-uint64_t* encryptions = new uint64_t[numTests];
-uint64_t* decryptions = new uint64_t[numTests];
-
-static std::mutex mutexEncrypt, mutexDecrypt;
+//uint64_t* msgs = new uint64_t[numTests];
+//uint64_t* keys = new uint64_t[numTests];
+//uint64_t* encryptions = new uint64_t[numTests];
+//uint64_t* decryptions = new uint64_t[numTests];
+std::mutex mutexFlag;
 
 static void EncryptDESAsync(uint64_t plaintext, uint64_t key, uint64_t* result)
 {
@@ -345,7 +344,17 @@ static void DecryptDESAsync(uint64_t encryption, uint64_t key, uint64_t* result)
 	//std::lock_guard<std::mutex> lock(mutexDecrypt);
 	*result = decryption;
 }
+static void EncryptDecryptDESAsync()
+{
+	uint64_t plaintext = ((uint64_t)rand()) << 32 | rand();
+	uint64_t key, encryption, decryption;
+	InitKeyDES(key);
 
+	EncryptDES(plaintext, key, encryption);
+	DecryptDES(encryption, key, decryption);
+	//std::lock_guard<std::mutex> lock(mutexFlag);
+	//bFlag = 1 & (decryption == plaintext);
+}
 
 
 // Testing function
@@ -363,77 +372,91 @@ void foo()
 	//uint64_t* encryptions = new uint64_t[numTests];
 	//uint64_t* decryptions = new uint64_t[numTests];
 	std::vector<std::future<void>> futures;
-	for (int i = 0; i < numTests; i++)
-	{
-		msgs[i] = ((uint64_t)rand()) << 32 | rand();
-		InitKeyDES(keys[i]);
-	}
+	//for (int i = 0; i < numTests; i++)
+	//{
+	//	msgs[i] = ((uint64_t)rand()) << 32 | rand();
+	//	InitKeyDES(keys[i]);
+	//}
 
-	auto veryStart = std::chrono::high_resolution_clock::now();
-	// running a 100 tests on Encryption/Decryption validation on random values of plaintext.
+	//auto veryStart = std::chrono::high_resolution_clock::now();
+	//// running a 100 tests on Encryption/Decryption validation on random values of plaintext.
+	//auto start = std::chrono::high_resolution_clock::now();
+	//for (int i = 0; i < numTests; i++)
+	//{
+	//	//EncryptDESAsync(msgs[i], keys[i], &encryptions[i]);
+	//	futures.push_back(std::async(std::launch::async, EncryptDESAsync, msgs[i], keys[i], &encryptions[i]));
+	//	//EncryptDES(plaintext, key, encryption);
+	//}
+	//auto end = std::chrono::high_resolution_clock::now();
+
+
+	//// wait for all threads to end
+	//for (int i = 0; i < numTests; i++)
+	//{
+	//	futures[i].wait();
+	//}
+
+	std::vector<std::thread> threads;
 	auto start = std::chrono::high_resolution_clock::now();
 	for (int i = 0; i < numTests; i++)
 	{
-		//EncryptDESAsync(msgs[i], keys[i], &encryptions[i]);
-		futures.push_back(std::async(std::launch::async, EncryptDESAsync, msgs[i], keys[i], &encryptions[i]));
-		//EncryptDES(plaintext, key, encryption);
+		//futures.push_back(std::async(std::launch::async, EncryptDecryptDESAsync));
+		std::thread t(EncryptDecryptDESAsync);
+		threads.push_back(std::move(t));
 	}
-	auto end = std::chrono::high_resolution_clock::now();
-
-
-	// wait for all threads to end
 	for (int i = 0; i < numTests; i++)
 	{
-		futures[i].wait();
+		//futures[i].wait();
+		threads[i].join();
 	}
-
-
+	auto end = std::chrono::high_resolution_clock::now();
 	// timeDiff calculation
 	auto timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
 	double timeSpan = timeDiff.count();
 
-	start = std::chrono::high_resolution_clock::now();
-	for (int i = 0; i < numTests; i++)
-	{
-		//DecryptDESAsync(encryptions[i], keys[i], &decryptions[i]);
-		futures.push_back(std::async(std::launch::async, DecryptDESAsync, encryptions[i], keys[i], &decryptions[i]));
-		//DecryptDES(encryption, key, decryption);
-	}
-	end = std::chrono::high_resolution_clock::now();
-	auto veryEnd = std::chrono::high_resolution_clock::now();
-	// wait for all threads to end
-	for (int i = 0; i < numTests; i++)
-	{
-		futures[i].wait();
-	}
 
-	// compare decryption
+	//start = std::chrono::high_resolution_clock::now();
+	//for (int i = 0; i < numTests; i++)
+	//{
+	//	//DecryptDESAsync(encryptions[i], keys[i], &decryptions[i]);
+	//	futures.push_back(std::async(std::launch::async, DecryptDESAsync, encryptions[i], keys[i], &decryptions[i]));
+	//	//DecryptDES(encryption, key, decryption);
+	//}
+	//end = std::chrono::high_resolution_clock::now();
+	//auto veryEnd = std::chrono::high_resolution_clock::now();
+	//// wait for all threads to end
+	//for (int i = 0; i < numTests; i++)
+	//{
+	//	futures[i].wait();
+	//}
 
-	for (int i = 0; i < numTests; i++)
-	{
-		if (msgs[i] != decryptions[i])
-		{
-			bFlag = 0;
-			break;
-		}
-	}
+	//// compare decryption
+
+	//for (int i = 0; i < numTests; i++)
+	//{
+	//	if (msgs[i] != decryptions[i])
+	//	{
+	//		bFlag = 0;
+	//		break;
+	//	}
+	//}
 
 	timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
 	timeSpan += timeDiff.count();
-	auto totalTimeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(veryEnd - veryStart);
+	//auto totalTimeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(veryEnd - veryStart);
 
 	std::cout << "Was encryption/decryption successful? " << (bFlag ? "true" : "false") << "\n";
 	std::cout << "Average time to encrypt + decrypt: " << (timeSpan *1000*1000) / numTests << "us\n";
 	std::cout << "Total time to encrypt + decrypt: " << timeSpan << "s\n";
-	std::cout << "Total time (with waiting) to encrypt + decrypt: " << totalTimeDiff.count() << "s\n";
+	//std::cout << "Total time (with waiting) to encrypt + decrypt: " << totalTimeDiff.count() << "s\n";
 	double sizeBytes = numTests * 8; // 8 bytes of plaintext
 	double avgTime = timeSpan / numTests;
 
 	double sizeMegaBytes = sizeBytes / 1048576;
 	double speed = sizeMegaBytes / timeSpan;
-	double totalSpeed = sizeMegaBytes / totalTimeDiff.count();
+	//double totalSpeed = sizeMegaBytes / totalTimeDiff.count();
 	std::cout << "Average speed to encrypt + decrypt: " << speed << "MBPS\n";
-	std::cout << "Total speed (with waiting) to encrypt + decrypt: " << totalSpeed << "MBPS\n";
+	//std::cout << "Total speed (with waiting) to encrypt + decrypt: " << totalSpeed << "MBPS\n";
 
 }
 
