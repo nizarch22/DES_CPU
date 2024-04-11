@@ -237,6 +237,18 @@ void InitKeyDES(uint64_t* keys)
 
 void EncryptDES(const uint64_t& plaintext, const uint64_t* keys, uint64_t& decryption)
 {
+	uint64_t output = 0;
+	uint64_t bit;
+	int k = 0;
+	uint64_t resultS = 0; uint64_t temp;
+	uint8_t y, x;
+	uint8_t in;
+
+	uint64_t mask = 63;
+	uint8_t maskY1, maskY2, maskX;
+	maskY1 = 1;
+	maskY2 = 32;
+	maskX = 30;
 	uint64_t& result = decryption; // setting alias for decryption
 
 	uint64_t input = plaintext;
@@ -258,18 +270,50 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t* keys, uint64_t& decry
 		permutedRoundKey = keys[i];
 
 		// Expansion permutation
-		expandPermutation(input); // 48 bits
+		//expandPermutation(input); // 48 bits
+		output = 0;
+		for (k = 0; k < 48; k++)
+		{
+			bit = (input >> (E[k] - 1)) & 1;
+			output += bit << k;
+		}
+		input = output;
+
 
 		// XOR with permuted round key
 		input ^= permutedRoundKey;
 
 		// Substitution S-boxes
-		substitute(input); // 32 bits
-		
-		// "P-matrix" permutation i.e. mix/shuffle
-		mixPermutation(input); 
+		//substitute(input); // 32 bits
+		resultS = 0;
+		for (k = 0; k < 8; k++)
+		{
+			// getting x,y coordinates for Sbox
+			in = input & mask;
+			x = (in & maskX) >> 1;
+			y = (in & maskY2) >> 4;
+			y += in & maskY1;
 
-		result += left^input; // Result[31:0] = L XOR f[31:0];
+			// Substitution 
+			temp = SBoxes[k][y * 16 + x];
+			resultS += temp << (4 * k);
+
+			// next bits
+			input >>= 6;
+		}
+		input = resultS;
+
+		// "P-matrix" permutation i.e. mix/shuffle
+		//mixPermutation(input);
+		output = 0;
+		for (k = 0; k < 32; k++)
+		{
+			bit = (input >> (PMatrix[k] - 1)) & 1;
+			output += bit << k;
+		}
+		input = output;
+
+		result += left ^ input; // Result[31:0] = L XOR f[31:0];
 
 		input = result;
 	}
@@ -350,6 +394,124 @@ void convertToArray(uint8_t* dest, uint64_t src)
 }
 
 // Testing function
+void foo1()
+{
+	int num = 10000;
+	auto start = std::chrono::high_resolution_clock::now();
+
+	auto end = std::chrono::high_resolution_clock::now();
+	auto timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+
+	start = std::chrono::high_resolution_clock::now();
+
+	end = std::chrono::high_resolution_clock::now();
+	timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+
+	uint64_t keys[16];
+
+
+	/// <summary>
+	// START
+	/// </summary>
+	uint64_t result; // setting alias for decryption
+
+	uint64_t input;
+	uint64_t roundKey;
+	uint64_t permutedRoundKey;
+	uint64_t left; // last 32 bits of plaintext/input to algorithm are preserved in this variable 
+
+	initialPermutation(input);
+
+	uint64_t output = 0;
+	uint64_t bit;
+	int k = 0;
+	uint64_t resultS = 0; uint64_t temp;
+	uint8_t y, x;
+	uint8_t in;
+
+	uint64_t mask = 63;
+	uint8_t maskY1, maskY2, maskX;
+	maskY1 = 1;
+	maskY2 = 32;
+	maskX = 30;
+	double time = 0;
+	start = std::chrono::high_resolution_clock::now();
+	for (int count = 0; count < num; count++)
+	{
+		input = ((uint64_t)rand())<<32 | rand();
+		InitKeyDES(&keys[0]);
+		for (int i = 0; i < 16; i++)
+		{
+			// Result[63:32] = Input[31:0];
+			result = input;
+			result <<= 32;
+			// preserve left side
+			left = input >> 32;
+
+
+			// round key
+			permutedRoundKey = keys[i];
+
+			// Expansion permutation
+			//expandPermutation(input); // 48 bits
+			for (k = 0; k < 48; k++)
+			{
+				bit = (input >> (E[k] - 1)) & 1;
+				output += bit << k;
+			}
+			input = output;
+
+
+			// XOR with permuted round key
+			input ^= permutedRoundKey;
+
+			// Substitution S-boxes
+			//substitute(input); // 32 bits
+			resultS = 0;
+			for (k = 0; k < 8; k++)
+			{
+				// getting x,y coordinates for Sbox
+				in = input & mask;
+				x = (in & maskX) >> 1;
+				y = (in & maskY2) >> 4;
+				y += in & maskY1;
+
+				// Substitution 
+				temp = SBoxes[k][y * 16 + x];
+				resultS += temp << (4 * k);
+
+				// next bits
+				input >>= 6;
+			}
+			input = resultS;
+
+			// "P-matrix" permutation i.e. mix/shuffle
+			//mixPermutation(input);
+			output = 0;
+			for (k = 0; k < 32; k++)
+			{
+				bit = (input >> (PMatrix[k] - 1)) & 1;
+				output += bit << k;
+			}
+			input = output;
+
+			
+
+			result += left ^ input; // Result[31:0] = L XOR f[31:0];
+
+			input = result;
+		}
+		swapLR(result);
+		reverseInitialPermutation(result);
+	}
+
+	end = std::chrono::high_resolution_clock::now();
+	timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+	std::cout << "average time: " << timeDiff.count() * 1e6 / num << "\n";
+
+	return;
+
+}
 void foo()
 {
 	const int numTests = 524288; // number of tests to generate 4MB of plaintext.
