@@ -319,6 +319,35 @@ void DecryptDES(const uint64_t& encryption, const uint64_t* keys, uint64_t& decr
 	reverseInitialPermutation(result);
 }
 
+void permuteHigh(uint8_t* input, const unsigned char* P, const unsigned int size)
+{
+	uint8_t index;
+	uint8_t output[64] = { 0 };
+	for (int i = 0; i < size; i++)
+	{
+		index = P[i];
+		output[i] = input[index - 1];
+	}
+	memcpy(&input[0], &output[0], 64 * sizeof(uint8_t));
+}
+void convertToBitwise(uint64_t& dest,uint8_t* src)
+{
+	dest = 0;
+	for (int i = 0; i < 64; i++)
+	{
+		dest += src[63-i];
+		dest <<= 1;
+	}
+	dest >>= 1;
+}
+void convertToArray(uint8_t* dest, uint64_t src)
+{
+	for (int i = 0; i < 64; i++)
+	{
+		dest[i] = src & 1;
+		src >>= 1;
+	}
+}
 
 // Testing function
 void foo()
@@ -366,6 +395,60 @@ void foo()
 	std::cout << "Average speed to encrypt + decrypt: " << speed << "MBPS\n";
 
 	// multithread
+	uint8_t arr[64] = { 0 };
+	uint64_t test = 101;
+	uint64_t res;
+	int b = 1;
+	std::cout << "Permutation test:\n";
+
+	double time = 0;
+	
+	for (int i = 0; i < numTests; i++)
+	{
+		test = ((uint64_t)rand() << 32) | rand();
+		convertToArray(arr, test);
+		start = std::chrono::high_resolution_clock::now();
+		permuteHigh(arr, IP, 64);
+		end = std::chrono::high_resolution_clock::now();
+		timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+		time += timeDiff.count();
+		//printMatrix(test, 8, 8);
+
+		//for (int i = 0; i < 8; i++)
+		//{
+		//	for (int j = 0; j < 8; j++)
+		//	{
+		//		std::cout << (int)arr[i * 8 + j] << ",";
+		//	}
+		//	std::cout << "\n";
+		//}
+		//std::cout << "Array printed.\n";
+	}
+	std::cout << "Total time with array: " << time*1e6 << "us\n";
+
+	time = 0;
+	start = std::chrono::high_resolution_clock::now();
+	for (int i = 0; i < numTests; i++)
+	{
+		test = ((uint64_t)rand() << 32) | rand();
+		
+
+		start = std::chrono::high_resolution_clock::now();
+		permuteMatrix(test, IP, 64);
+		end = std::chrono::high_resolution_clock::now();
+		timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+		time += timeDiff.count();
+	}
+	end = std::chrono::high_resolution_clock::now();
+
+	timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+	std::cout << "Total time with original: " << time * 1e6 << "us\n";
+
+	if (b == 0)
+	{
+		std::cout << "NOPE!\n";
+	}
+
 
 
 }
