@@ -25,7 +25,7 @@ void leftCircularShift(uint32_t& input, uint8_t times)
 	uint8_t bit;
 	for (int i = 0; i < times; i++)
 	{
-		bit = (input & mask28thBit)>>27;
+		bit = (input & mask28thBit) >> 27;
 		input <<= 1;
 		input += bit;
 	}
@@ -80,8 +80,8 @@ void generateReverseRoundKey(const int& index, uint64_t& roundKey)
 	left = mask28Bits >> 28;
 
 	// circular shifts
-	rightCircularShift(left, LCS[15-index]);
-	rightCircularShift(right, LCS[15-index]);
+	rightCircularShift(left, LCS[15 - index]);
+	rightCircularShift(right, LCS[15 - index]);
 
 	// copying left and right shifted keys to roundKey.
 	roundKey = left;
@@ -106,7 +106,7 @@ void fullShiftLCS(uint64_t& roundKey)
 		numShifts += LCS[i];
 	}
 	// circular shifts
-	leftCircularShift(left,numShifts);
+	leftCircularShift(left, numShifts);
 	leftCircularShift(right, numShifts);
 
 	// copying left and right shifted keys to roundKey.
@@ -137,13 +137,13 @@ void substitute(uint64_t& input)
 	{
 		// getting x,y coordinates for Sbox
 		in = input & mask;
-		x = (in & maskX)>>1;
-		y = (in & maskY2)>>4;
+		x = (in & maskX) >> 1;
+		y = (in & maskY2) >> 4;
 		y += in & maskY1;
 
 		// Substitution 
 		temp = SBoxes[i][y * 16 + x];
-		result += temp << (4*i);
+		result += temp << (4 * i);
 
 		// next bits
 		input >>= 6;
@@ -259,11 +259,11 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& encryp
 
 		// Substitution S-boxes
 		substitute(input); // 32 bits
-		
-		// "P-matrix" permutation i.e. mix/shuffle
-		mixPermutation(input); 
 
-		result += left^input; // Result[31:0] = L XOR f[31:0];
+		// "P-matrix" permutation i.e. mix/shuffle
+		mixPermutation(input);
+
+		result += left ^ input; // Result[31:0] = L XOR f[31:0];
 
 		input = result;
 	}
@@ -332,7 +332,7 @@ std::mutex mutexFlag;
 static void EncryptDESAsync(uint64_t plaintext, uint64_t key, uint64_t* result)
 {
 	uint64_t encryption;
-	EncryptDES(plaintext, key,encryption);
+	EncryptDES(plaintext, key, encryption);
 	//std::lock_guard<std::mutex> lock(mutexEncrypt);
 	*result = encryption;
 }
@@ -446,7 +446,7 @@ void foo()
 	//auto totalTimeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(veryEnd - veryStart);
 
 	std::cout << "Was encryption/decryption successful? " << (bFlag ? "true" : "false") << "\n";
-	std::cout << "Average time to encrypt + decrypt: " << (timeSpan *1000*1000) / numTests << "us\n";
+	std::cout << "Average time to encrypt + decrypt: " << (timeSpan * 1000 * 1000) / numTests << "us\n";
 	std::cout << "Total time to encrypt + decrypt: " << timeSpan << "s\n";
 	//std::cout << "Total time (with waiting) to encrypt + decrypt: " << totalTimeDiff.count() << "s\n";
 	double sizeBytes = numTests * 8; // 8 bytes of plaintext
