@@ -286,7 +286,6 @@ void DecryptDES(const uint64_t& encryption, const uint64_t* keys, uint64_t& decr
 	uint64_t left;
 
 	// initial operations
-	fullShiftLCS(roundKey);
 	initialPermutation(input);
 
 	for (int i = 0; i < 16; i++)
