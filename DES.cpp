@@ -1,9 +1,9 @@
 #include <iostream>
 #include <chrono>
 #include <random>
+#include <time.h>
 #include "DES.h"
 #include "DES_Matrices_NIST.h"
-
 // auxiliary functions
 void initialPermutation(uint64_t& input)
 {
@@ -321,14 +321,15 @@ void foo()
 	uint64_t encryption, decryption;
 	uint64_t* plaintexts = new uint64_t[numTests];
 	int bFlag = 0;
-
+	
 	for (int i = 0; i < numTests; i++)
 	{
 		plaintexts[i] = ((uint64_t)rand()) << 32 | rand();
 	}
 
 	// running a 100 tests on Encryption/Decryption validation on random values of plaintext.
-	auto start = std::chrono::high_resolution_clock::now();
+	//auto start = std::chrono::high_resolution_clock::now();
+	clock_t start = clock();
 	for (int i = 0; i < numTests; i++)
 	{
 		plaintext = plaintexts[i];
@@ -343,19 +344,23 @@ void foo()
 			break;
 		}
 	}
-	auto end = std::chrono::high_resolution_clock::now();
-	auto timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
-
+	clock_t end = clock();
+	double timeDiff = (double)(end - start) / CLOCKS_PER_SEC;
+	//auto end = std::chrono::high_resolution_clock::now();
+	//auto timeDiff = std::chrono::duration_cast<std::chrono::duration<double>>(end - start);
+	
 	double sizeBytes = numTests * 8; // 8 bytes of plaintext
-	double avgTime = timeDiff.count() / numTests;
+	//double avgTime = timeDiff.count() / numTests;
 	double sizeMegaBytes = sizeBytes / 1048576;
-	double speed = sizeMegaBytes / (timeDiff.count());
+	//double speed = sizeMegaBytes / (timeDiff.count());
+	double speed = sizeMegaBytes / (timeDiff);
 
 	std::cout << "Was encryption/decryption successful? " << (bFlag ? "false" : "true") << "\n";
-	std::cout << "Total time to encrypt + decrypt: " << timeDiff.count() << "s\n";
+	std::cout << "Total time to encrypt + decrypt: " << timeDiff << "s\n";
 	std::cout << "Total bytes (encrypted+decrypted): " << sizeBytes << " bytes\n";
-	std::cout << "Average time to encrypt + decrypt: " << (timeDiff.count()*1000*1000) / numTests << "us\n";
-	std::cout << "Average speed to encrypt + decrypt: " << speed << "MBPS\n";
+	std::cout << "Average time to encrypt + decrypt: " << (timeDiff*1000*1000) / numTests << "us\n";
+	std::cout << "Average speed to encrypt + decrypt: " << speed << "MBPS (Megabytes Per Second\n";
+	std::cout << "Average speed to encrypt + decrypt: " << speed*8 << "MBPS (Megabits Per Second\n";
 
 	// multithread
 
