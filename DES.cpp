@@ -359,8 +359,8 @@ void foo()
 	std::cout << "Total time to encrypt + decrypt: " << timeDiff << "s\n";
 	std::cout << "Total bytes (encrypted+decrypted): " << sizeBytes << " bytes\n";
 	std::cout << "Average time to encrypt + decrypt: " << (timeDiff*1000*1000) / numTests << "us\n";
-	std::cout << "Average speed to encrypt + decrypt: " << speed << "MBPS (Megabytes Per Second\n";
-	std::cout << "Average speed to encrypt + decrypt: " << speed*8 << "MBPS (Megabits Per Second\n";
+	std::cout << "Average speed to encrypt + decrypt: " << speed << "MBPS (Megabytes Per Second)\n";
+	std::cout << "Average speed to encrypt + decrypt: " << speed*8 << "MBPS (Megabits Per Second)\n";
 
 	// multithread
 
