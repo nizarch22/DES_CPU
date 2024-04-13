@@ -17,7 +17,7 @@ int main()
 		plaintexts[i] = ((uint64_t)rand()) << 32 | rand();
 	}
 
-	// running a 100 tests on Encryption/Decryption validation on random values of plaintext.
+	// running tests on Encryption/Decryption validation on randomly generated plaintexts.
 	clock_t start = clock();
 	InitKeyDES(key);
 	for (int i = 0; i < numTests; i++)
