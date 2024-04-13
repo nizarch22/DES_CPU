@@ -4,7 +4,9 @@
 #include <time.h>
 #include "DES.h"
 #include "DES_Matrices_NIST.h"
-// auxiliary functions
+/////////////////////////////////////////////////////////////////////////////////////
+// permutation - substitution functions
+/////////////////////////////////////////////////////////////////////////////////////
 void initialPermutation(uint64_t& input)
 {
 	permuteMatrix(input, IP, 64);
@@ -57,6 +59,9 @@ void swapLR(uint64_t& input) // Swap left (32 bit) and right (32 bit) parts of t
 	// left side moved to right
 	input += temp;
 }
+/////////////////////////////////////////////////////////////////////////////////////
+//
+/////////////////////////////////////////////////////////////////////////////////////
 void generateKey(uint64_t& key)
 {
 	// 64 bits
@@ -167,9 +172,9 @@ void expandPermutation(uint64_t& input)
 {
 	permuteMatrix(input, E, 48);
 }
-
-
+/////////////////////////////////////////////////////////////////////////////////////
 // Matrix helper functions
+/////////////////////////////////////////////////////////////////////////////////////
 void permuteMatrix(uint64_t& input, const unsigned char* P, const unsigned int size)
 {
 	uint64_t output = 0;
@@ -183,7 +188,9 @@ void permuteMatrix(uint64_t& input, const unsigned char* P, const unsigned int s
 	input = output;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
 // Debug functions
+/////////////////////////////////////////////////////////////////////////////////////
 void printMatrix(uint64_t matrix, int y, int x)
 {
 	bool bit;
@@ -217,12 +224,13 @@ int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, const int size)
 	return m2 == m1;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
 // Essential functions
+/////////////////////////////////////////////////////////////////////////////////////
 void InitKeyDES(uint64_t& key)
 {
 	generateKey(key);
 }
-
 void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& decryption)
 {
 	uint64_t& result = decryption; // setting alias for decryption
@@ -311,8 +319,9 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 	reverseInitialPermutation(result);
 }
 
-
+/////////////////////////////////////////////////////////////////////////////////////
 // Testing function
+/////////////////////////////////////////////////////////////////////////////////////
 void foo()
 {
 	const int numTests = 1<<19; // number of tests to get 4MB plaintext
@@ -361,10 +370,6 @@ void foo()
 	std::cout << "Average time to encrypt + decrypt: " << (timeDiff*1000*1000) / numTests << "us\n";
 	std::cout << "Average speed to encrypt + decrypt: " << speed << "MBPS (Megabytes Per Second)\n";
 	std::cout << "Average speed to encrypt + decrypt: " << speed*8 << "MBPS (Megabits Per Second)\n";
-
-	// multithread
-
-
 }
 
 
