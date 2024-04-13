@@ -315,7 +315,7 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 // Testing function
 void foo()
 {
-	const int numTests = 2<<19; // number of tests to get 4MB plaintext
+	const int numTests = 1<<19; // number of tests to get 4MB plaintext
 	uint64_t key;
 	uint64_t plaintext; 
 	uint64_t encryption, decryption;
