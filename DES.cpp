@@ -226,13 +226,14 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& decryp
 
 	for (int i = 0; i < 16; i++)
 	{
-		// Result[63:32] = Input[31:0];
+		// Preserving L,R.
+		// preserve right side (Result[63:32] = Input[31:0])
 		result = input;
 		result <<= 32;
 		// preserve left side
 		left = input >> 32;
 
-		// round key
+		// Round key
 		generateShiftedKey(i, shiftedKey);
 		permutedRoundKey = shiftedKey;
 		roundKeyPermutation(permutedRoundKey);
@@ -249,8 +250,10 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& decryp
 		// "P-matrix" permutation i.e. mix/shuffle
 		mixPermutation(input); 
 
+		// XOR with preserved left side
 		result += left^input; // Result[31:0] = L XOR f[31:0];
 
+		// End of loop
 		input = result;
 	}
 
@@ -260,13 +263,13 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& decryp
 void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decryption)
 {
 	uint64_t input = encryption;
-	uint64_t roundKey = key;
+	uint64_t shiftedKey = key;
 	uint64_t permutedRoundKey;
 	uint64_t& result = decryption;
 	uint64_t left;
 
 	// initial operations
-	fullShiftLCS(roundKey);
+	fullShiftLCS(shiftedKey);
 	initialPermutation(input);
 
 	for (int i = 0; i < 16; i++)
@@ -278,22 +281,25 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 		left = input >> 32;
 
 		// round key
-		permutedRoundKey = roundKey;
+		permutedRoundKey = shiftedKey;
 		roundKeyPermutation(permutedRoundKey);
-		generateReverseShiftedKey(i, roundKey);
+		generateReverseShiftedKey(i, shiftedKey);
 
 		// Expansion
 		expandPermutation(input); // 48 bits
 		// XOR with key
 		input ^= permutedRoundKey;
 
-		// Substitution 
+		// Substitution S-boxes
 		substitute(input); // 32 bits
 
-		// "P matrix" permutation i.e. shuffle/mix permutation
+		// "P-matrix" permutation i.e. mix/shuffle
 		mixPermutation(input);
+
+		// XOR with preserved left side
 		result += left ^ input; // Result[31:0] = L XOR f[31:0];
 
+		// End of loop
 		input = result;
 	}
 
