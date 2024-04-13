@@ -11,4 +11,3 @@ void foo();
 //- including will not be necessary after debugging is done.
 // matrix helper functions 
 void permuteMatrix(uint64_t& input, const unsigned char* P, const unsigned int size);
-int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, const int size);

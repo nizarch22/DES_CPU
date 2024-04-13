@@ -7,6 +7,18 @@
 /////////////////////////////////////////////////////////////////////////////////////
 // permutation - substitution functions
 /////////////////////////////////////////////////////////////////////////////////////
+void permuteMatrix(uint64_t& input, const unsigned char* P, const unsigned int size)
+{
+	uint64_t output = 0;
+	uint64_t bit;
+
+	for (int i = 0; i < size; i++)
+	{
+		bit = (input >> (P[i] - 1)) & 1;
+		output += bit << i;
+	}
+	input = output;
+}
 void initialPermutation(uint64_t& input)
 {
 	permuteMatrix(input, IP, 64);
@@ -60,13 +72,12 @@ void swapLR(uint64_t& input) // Swap left (32 bit) and right (32 bit) parts of t
 	input += temp;
 }
 /////////////////////////////////////////////////////////////////////////////////////
-//
+// key generation functions
 /////////////////////////////////////////////////////////////////////////////////////
 void generateKey(uint64_t& key)
 {
 	// 64 bits
 	key = ((uint64_t)rand()) << 32 | rand();
-	permuteMatrix(key, PC1, 56);
 }
 void leftCircularShift(uint32_t& input, uint8_t times)
 {
@@ -98,7 +109,7 @@ void rightCircularShift(uint32_t& input, uint8_t times)
 	}
 	input = input & mask28Bits;
 }
-void generateRoundKey(const int& index, uint64_t& roundKey)
+void generateShiftedKey(const int& index, uint64_t& roundKey)
 {
 	uint32_t left, right;
 	uint64_t mask28Bits = 268435455; // covers first 28 bits
@@ -118,7 +129,7 @@ void generateRoundKey(const int& index, uint64_t& roundKey)
 	roundKey <<= 28;
 	roundKey += right;
 }
-void generateReverseRoundKey(const int& index, uint64_t& roundKey)
+void generateReverseShiftedKey(const int& index, uint64_t& roundKey)
 {
 	uint32_t left, right;
 	uint64_t mask28Bits = 268435455; // covers first 28 bits
@@ -172,21 +183,6 @@ void expandPermutation(uint64_t& input)
 {
 	permuteMatrix(input, E, 48);
 }
-/////////////////////////////////////////////////////////////////////////////////////
-// Matrix helper functions
-/////////////////////////////////////////////////////////////////////////////////////
-void permuteMatrix(uint64_t& input, const unsigned char* P, const unsigned int size)
-{
-	uint64_t output = 0;
-	uint64_t bit;
-
-	for (int i = 0; i < size; i++)
-	{
-		bit = (input >> (P[i] - 1)) & 1;
-		output += bit << i;
-	}
-	input = output;
-}
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Debug functions
@@ -208,21 +204,6 @@ void printMatrix(uint64_t matrix, int y, int x)
 	}
 	std::cout << "Matrix printed.\n";
 }
-int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, const int size)
-{
-	//bool bit;
-	//uint64_t mask = 1;
-	//for (int i = 0; i < size; i++)
-	//{
-	//	bit = ((m1 & mask) == (m2 & mask));
-	//	mask <<= 1;
-
-	//	if (bit == 0)
-	//		return 0;
-	//}
-	//return 1;
-	return m2 == m1;
-}
 
 /////////////////////////////////////////////////////////////////////////////////////
 // Essential functions
@@ -230,13 +211,14 @@ int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, const int size)
 void InitKeyDES(uint64_t& key)
 {
 	generateKey(key);
+	permuteMatrix(key, PC1, 56);
 }
 void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& decryption)
 {
 	uint64_t& result = decryption; // setting alias for decryption
 
 	uint64_t input = plaintext;
-	uint64_t roundKey = key;
+	uint64_t shiftedKey = key;
 	uint64_t permutedRoundKey;
 	uint64_t left; // last 32 bits of plaintext/input to algorithm are preserved in this variable 
 
@@ -251,8 +233,8 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& decryp
 		left = input >> 32;
 
 		// round key
-		generateRoundKey(i, roundKey);
-		permutedRoundKey = roundKey;
+		generateShiftedKey(i, shiftedKey);
+		permutedRoundKey = shiftedKey;
 		roundKeyPermutation(permutedRoundKey);
 
 		// Expansion permutation
@@ -298,7 +280,7 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 		// round key
 		permutedRoundKey = roundKey;
 		roundKeyPermutation(permutedRoundKey);
-		generateReverseRoundKey(i, roundKey);
+		generateReverseShiftedKey(i, roundKey);
 
 		// Expansion
 		expandPermutation(input); // 48 bits
