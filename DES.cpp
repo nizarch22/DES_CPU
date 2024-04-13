@@ -7,6 +7,18 @@
 /////////////////////////////////////////////////////////////////////////////////////
 // permutation - substitution functions
 /////////////////////////////////////////////////////////////////////////////////////
+void permuteMatrix(uint64_t& input, const unsigned char* P, const unsigned int size)
+{
+	uint64_t output = 0;
+	uint64_t bit;
+
+	for (int i = 0; i < size; i++)
+	{
+		bit = (input >> (P[i] - 1)) & 1;
+		output += bit << i;
+	}
+	input = output;
+}
 void initialPermutation(uint64_t& input)
 {
 	permuteMatrix(input, IP, 64);
@@ -191,22 +203,6 @@ void generateRoundKeys(uint64_t* roundKeys, const uint64_t& key)
 }
 
 /////////////////////////////////////////////////////////////////////////////////////
-// Matrix helper functions
-/////////////////////////////////////////////////////////////////////////////////////
-void permuteMatrix(uint64_t& input, const unsigned char* P, const unsigned int size)
-{
-	uint64_t output = 0;
-	uint64_t bit;
-
-	for (int i = 0; i < size; i++)
-	{
-		bit = (input >> (P[i] - 1)) & 1;
-		output += bit << i;
-	}
-	input = output;
-}
-
-/////////////////////////////////////////////////////////////////////////////////////
 // Debug functions
 /////////////////////////////////////////////////////////////////////////////////////
 void printMatrix(uint64_t matrix, int y, int x)
@@ -245,11 +241,6 @@ int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, const int size)
 /////////////////////////////////////////////////////////////////////////////////////
 // Essential functions
 /////////////////////////////////////////////////////////////////////////////////////
-void InitKeyDES(uint64_t& key)
-{
-	generateKey(key);
-	permuteMatrix(key, PC1, 56);
-}
 void InitKeysDES(uint64_t* roundKeys)
 {
 	// generate a random key and perform PC1 permutation
@@ -259,15 +250,13 @@ void InitKeysDES(uint64_t* roundKeys)
 
 	generateRoundKeys(roundKeys, key);
 }
-void EncryptDES(const uint64_t& plaintext, const uint64_t* keys, uint64_t& encryption)
+void EncryptDES(const uint64_t& plaintext, const uint64_t* roundKeys, uint64_t& encryption)
 {
 	uint64_t& result = encryption; // setting alias for decryption
 
 	uint64_t input = plaintext;
 	uint64_t roundKey;
-	uint64_t permutedRoundKey;
 	uint64_t left; // last 32 bits of plaintext/input to algorithm are preserved in this variable 
-	uint64_t right; // first 32 bits of plaintext/input to algorithm are preserved in this variable 
 
 	initialPermutation(input);
 
@@ -280,13 +269,13 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t* keys, uint64_t& encry
 		left = input >> 32;
 
 		// round key
-		permutedRoundKey = keys[i];
+		roundKey = roundKeys[i];
 
 		// Expansion permutation
 		expandPermutation(input); // 48 bits
 
 		// XOR with permuted round key
-		input ^= permutedRoundKey;
+		input ^= roundKey;
 
 		// Substitution S-boxes
 		substitute(input); // 32 bits
@@ -302,11 +291,10 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t* keys, uint64_t& encry
 	swapLR(result);
 	reverseInitialPermutation(result);
 }
-void DecryptDES(const uint64_t& encryption, const uint64_t* keys, uint64_t& decryption)
+void DecryptDES(const uint64_t& encryption, const uint64_t* roundKeys, uint64_t& decryption)
 {
 	uint64_t input = encryption;
 	uint64_t roundKey;
-	uint64_t permutedRoundKey;
 	uint64_t& result = decryption;
 	uint64_t left;
 
@@ -322,12 +310,12 @@ void DecryptDES(const uint64_t& encryption, const uint64_t* keys, uint64_t& decr
 		left = input >> 32;
 
 		// round key
-		permutedRoundKey = keys[15 - i];
+		roundKey = roundKeys[15 - i];
 
 		// Expansion
 		expandPermutation(input); // 48 bits
 		// XOR with key
-		input ^= permutedRoundKey;
+		input ^= roundKey;
 
 		// Substitution 
 		substitute(input); // 32 bits
@@ -343,19 +331,20 @@ void DecryptDES(const uint64_t& encryption, const uint64_t* keys, uint64_t& decr
 	reverseInitialPermutation(result);
 }
 
-
-// Testing function
+/////////////////////////////////////////////////////////////////////////////////////
+// Testing functions
+/////////////////////////////////////////////////////////////////////////////////////
 void foo()
 {
 	clock_t beginning = clock();
 	const int numTests = 524288; // number of tests to generate 4MB of plaintext.
-	uint64_t keys[16];
+	uint64_t roundKeys[16];
 	uint64_t plaintext; 
 	uint64_t encryption, decryption;
 	uint64_t* plaintexts = new uint64_t[numTests];
 	int bFlag = 0;
 
-	//prep plaintexts
+	// looad plaintexts
 	for (int i = 0; i < numTests; i++)
 	{
 		plaintexts[i] = ((uint64_t)rand()) << 32 | rand();
@@ -366,9 +355,9 @@ void foo()
 	for (int i = 0; i < numTests; i++)
 	{
 		plaintext = plaintexts[i];
-		InitKeysDES(&keys[0]);
-		EncryptDES(plaintext, &keys[0], encryption);
-		DecryptDES(encryption, &keys[0], decryption);
+		InitKeysDES(&roundKeys[0]);
+		EncryptDES(plaintext, &roundKeys[0], encryption);
+		DecryptDES(encryption, &roundKeys[0], decryption);
 
 		if (plaintext!=decryption)
 		{
@@ -393,8 +382,10 @@ void foo()
 	
 	timeDiff = (double)(end - beginning) / (CLOCKS_PER_SEC);
 	std::cout << "Total time to encrypt + decrypt: " << timeDiff << "s\n";
-	// multithread
+}
 
+void foo2()
+{
 	//uint64_t keys[16];
 	//uint64_t msg = 4702111234474983745;
 	//uint64_t key = 4774451407313060418;
