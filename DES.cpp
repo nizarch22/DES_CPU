@@ -4,113 +4,12 @@
 #include <time.h>
 #include "DES.h"
 #include "DES_Matrices_NIST.h"
-// auxiliary functions
+/////////////////////////////////////////////////////////////////////////////////////
+// permutation - substitution functions
+/////////////////////////////////////////////////////////////////////////////////////
 void initialPermutation(uint64_t& input)
 {
 	permuteMatrix(input, IP, 64);
-}
-void generateKey(uint64_t& key)
-{
-	// 64 bits
-	key = ((uint64_t)rand()) << 32 | rand();
-	permuteMatrix(key, PC1, 56);
-}
-void leftCircularShift(uint32_t& input, uint8_t times)
-{
-	uint32_t mask28thBit = 1 << 27; // 28th bit
-	uint32_t mask28Bits = 268435455; // covers first 28 bits
-
-	uint8_t bit;
-	for (int i = 0; i < times; i++)
-	{
-		bit = (input & mask28thBit)>>27;
-		input <<= 1;
-		input += bit;
-	}
-	input = input & mask28Bits;
-
-}
-void rightCircularShift(uint32_t& input, uint8_t times)
-{
-	uint32_t bit28th = 1 << 27; // 28th bit
-	uint32_t mask1stBit = 1; // 28th bit
-	uint32_t mask28Bits = 268435455; // covers first 28 bits
-
-	uint32_t bit;
-	for (int i = 0; i < times; i++)
-	{
-		bit = (input & mask1stBit);
-		input >>= 1;
-		input += bit * bit28th;
-	}
-	input = input & mask28Bits;
-
-}
-void generateRoundKey(const int& index, uint64_t& roundKey)
-{
-	uint32_t left, right;
-	uint64_t mask28Bits = 268435455; // covers first 28 bits
-
-	// getting left and right sides
-	right = roundKey & mask28Bits;
-	mask28Bits <<= 28;
-	mask28Bits = roundKey & mask28Bits;
-	left = mask28Bits >> 28;
-
-	// circular shifts
-	leftCircularShift(left, LCS[index]);
-	leftCircularShift(right, LCS[index]);
-
-	// copying left and right shifted keys to roundKey.
-	roundKey = left;
-	roundKey <<= 28;
-	roundKey += right;
-}
-void generateReverseRoundKey(const int& index, uint64_t& roundKey)
-{
-	uint32_t left, right;
-	uint64_t mask28Bits = 268435455; // covers first 28 bits
-
-	// getting left and right sides
-	right = roundKey & mask28Bits;
-	mask28Bits <<= 28;
-	mask28Bits = roundKey & mask28Bits;
-	left = mask28Bits >> 28;
-
-	// circular shifts
-	rightCircularShift(left, LCS[15-index]);
-	rightCircularShift(right, LCS[15-index]);
-
-	// copying left and right shifted keys to roundKey.
-	roundKey = left;
-	roundKey <<= 28;
-	roundKey += right;
-}
-// Preemptively shifting all keys using LCS matrix.
-void fullShiftLCS(uint64_t& roundKey)
-{
-	uint32_t left, right;
-	uint64_t mask28Bits = 268435455; // covers first 28 bits
-
-	// getting left and right sides
-	right = roundKey & mask28Bits;
-	mask28Bits <<= 28;
-	mask28Bits = roundKey & mask28Bits;
-	left = mask28Bits >> 28;
-
-	uint32_t numShifts = 0;
-	for (int i = 0; i < 16; i++)
-	{
-		numShifts += LCS[i];
-	}
-	// circular shifts
-	leftCircularShift(left,numShifts);
-	leftCircularShift(right, numShifts);
-
-	// copying left and right shifted keys to roundKey.
-	roundKey = left;
-	roundKey <<= 28;
-	roundKey += right;
 }
 void roundKeyPermutation(uint64_t& roundKey)
 {
@@ -169,7 +68,131 @@ void swapLR(uint64_t& input) // Swap left (32 bit) and right (32 bit) parts of t
 	input += temp;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
+// key generation functions
+/////////////////////////////////////////////////////////////////////////////////////
+void generateKey(uint64_t& key)
+{
+	// 64 bits
+	key = ((uint64_t)rand()) << 32 | rand();
+}
+void leftCircularShift(uint32_t& input, uint8_t times)
+{
+	uint32_t mask28thBit = 1 << 27; // 28th bit
+	uint32_t mask28Bits = 268435455; // covers first 28 bits
+
+	uint8_t bit;
+	for (int i = 0; i < times; i++)
+	{
+		bit = (input & mask28thBit) >> 27;
+		input <<= 1;
+		input += bit;
+	}
+	input = input & mask28Bits;
+
+}
+void rightCircularShift(uint32_t& input, uint8_t times)
+{
+	uint32_t bit28th = 1 << 27; // 28th bit
+	uint32_t mask1stBit = 1; // 28th bit
+	uint32_t mask28Bits = 268435455; // covers first 28 bits
+
+	uint32_t bit;
+	for (int i = 0; i < times; i++)
+	{
+		bit = (input & mask1stBit);
+		input >>= 1;
+		input += bit * bit28th;
+	}
+	input = input & mask28Bits;
+
+}
+void generateShiftedKey(const int& index, uint64_t& roundKey)
+{
+	uint32_t left, right;
+	uint64_t mask28Bits = 268435455; // covers first 28 bits
+
+	// getting left and right sides
+	right = roundKey & mask28Bits;
+	mask28Bits <<= 28;
+	mask28Bits = roundKey & mask28Bits;
+	left = mask28Bits >> 28;
+
+	// circular shifts
+	leftCircularShift(left, LCS[index]);
+	leftCircularShift(right, LCS[index]);
+
+	// copying left and right shifted keys to roundKey.
+	roundKey = left;
+	roundKey <<= 28;
+	roundKey += right;
+}
+void generateReverseRoundKey(const int& index, uint64_t& roundKey)
+{
+	uint32_t left, right;
+	uint64_t mask28Bits = 268435455; // covers first 28 bits
+
+	// getting left and right sides
+	right = roundKey & mask28Bits;
+	mask28Bits <<= 28;
+	mask28Bits = roundKey & mask28Bits;
+	left = mask28Bits >> 28;
+
+	// circular shifts
+	rightCircularShift(left, LCS[15 - index]);
+	rightCircularShift(right, LCS[15 - index]);
+
+	// copying left and right shifted keys to roundKey.
+	roundKey = left;
+	roundKey <<= 28;
+	roundKey += right;
+}
+// Preemptively shifting all keys using LCS matrix.
+void fullShiftLCS(uint64_t& roundKey)
+{
+	uint32_t left, right;
+	uint64_t mask28Bits = 268435455; // covers first 28 bits
+
+	// getting left and right sides
+	right = roundKey & mask28Bits;
+	mask28Bits <<= 28;
+	mask28Bits = roundKey & mask28Bits;
+	left = mask28Bits >> 28;
+
+	uint32_t numShifts = 0;
+	for (int i = 0; i < 16; i++)
+	{
+		numShifts += LCS[i];
+	}
+	// circular shifts
+	leftCircularShift(left, numShifts);
+	leftCircularShift(right, numShifts);
+
+	// copying left and right shifted keys to roundKey.
+	roundKey = left;
+	roundKey <<= 28;
+	roundKey += right;
+}
+void generateRoundKeys(uint64_t* roundKeys, const uint64_t& key)
+{
+	// Calculate all round keys
+	uint64_t roundKey;
+	uint64_t shiftedKey = key; // shifted keys are reused for the next rounds
+	for (int i = 0; i < 16; i++)
+	{
+		// 28 bit left shifting
+		generateShiftedKey(i, shiftedKey);
+
+		// permutation of round key
+		roundKey = shiftedKey;
+		roundKeyPermutation(roundKey);
+		roundKeys[i] = roundKey;
+	}
+}
+
+/////////////////////////////////////////////////////////////////////////////////////
 // Matrix helper functions
+/////////////////////////////////////////////////////////////////////////////////////
 void permuteMatrix(uint64_t& input, const unsigned char* P, const unsigned int size)
 {
 	uint64_t output = 0;
@@ -183,7 +206,9 @@ void permuteMatrix(uint64_t& input, const unsigned char* P, const unsigned int s
 	input = output;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
 // Debug functions
+/////////////////////////////////////////////////////////////////////////////////////
 void printMatrix(uint64_t matrix, int y, int x)
 {
 	bool bit;
@@ -217,24 +242,23 @@ int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, const int size)
 	return m2 == m1;
 }
 
+/////////////////////////////////////////////////////////////////////////////////////
 // Essential functions
-void generateRoundKeys(uint64_t* keys)
+/////////////////////////////////////////////////////////////////////////////////////
+void InitKeyDES(uint64_t& key)
 {
-	uint64_t roundKey;
+	generateKey(key);
+	permuteMatrix(key, PC1, 56);
+}
+void InitKeysDES(uint64_t* roundKeys)
+{
+	// generate a random key and perform PC1 permutation
 	uint64_t key;
 	generateKey(key);
-	for (int i = 0; i < 16; i++)
-	{
-		generateRoundKey(i, roundKey);
-		roundKeyPermutation(roundKey);
-		keys[i] = roundKey;
-	}
-}
-void InitKeyDES(uint64_t* keys)
-{
-	generateRoundKeys(keys);
-}
+	permuteMatrix(key, PC1, 56);
 
+	generateRoundKeys(roundKeys, key);
+}
 void EncryptDES(const uint64_t& plaintext, const uint64_t* keys, uint64_t& encryption)
 {
 	uint64_t& result = encryption; // setting alias for decryption
@@ -342,7 +366,7 @@ void foo()
 	for (int i = 0; i < numTests; i++)
 	{
 		plaintext = plaintexts[i];
-		InitKeyDES(&keys[0]);
+		InitKeysDES(&keys[0]);
 		EncryptDES(plaintext, &keys[0], encryption);
 		DecryptDES(encryption, &keys[0], decryption);
 
