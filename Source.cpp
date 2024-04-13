@@ -1,7 +1,6 @@
 #include <iostream>
 #include "DES.h"
 
-
 int main()
 {
 	// Testing the speed and timing of the DES algorithm with key extension (pre feistel loop calculated round keys).
@@ -23,10 +22,10 @@ int main()
 
 	// running tests on Encryption/Decryption validation on random values of plaintext.
 	clock_t start = clock();
+	InitKeysDES(&roundKeys[0]);
 	for (int i = 0; i < numTests; i++)
 	{
 		plaintext = plaintexts[i];
-		InitKeysDES(&roundKeys[0]);
 		EncryptDES(plaintext, &roundKeys[0], encryption);
 		DecryptDES(encryption, &roundKeys[0], decryption);
 

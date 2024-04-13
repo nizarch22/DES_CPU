@@ -287,7 +287,6 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t* roundKeys, uint64_t& 
 
 		input = result;
 	}
-
 	swapLR(result);
 	reverseInitialPermutation(result);
 }
