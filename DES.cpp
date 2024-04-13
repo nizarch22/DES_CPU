@@ -9,6 +9,54 @@ void initialPermutation(uint64_t& input)
 {
 	permuteMatrix(input, IP, 64);
 }
+void substitute(uint64_t& input)
+{
+	uint64_t result = 0; uint64_t temp;
+	uint8_t y, x;
+	uint8_t in;
+
+	uint64_t mask = 63;
+	uint8_t maskY1, maskY2, maskX;
+	maskY1 = 1;
+	maskY2 = 32;
+	maskX = 30;
+	for (int i = 0; i < 8; i++)
+	{
+		// getting x,y coordinates for Sbox
+		in = input & mask;
+		x = (in & maskX) >> 1;
+		y = (in & maskY2) >> 4;
+		y += in & maskY1;
+
+		// Substitution 
+		temp = SBoxes[i][y * 16 + x];
+		result += temp << (4 * i);
+
+		// next bits
+		input >>= 6;
+	}
+	input = result;
+}
+void mixPermutation(uint64_t& input)
+{
+	permuteMatrix(input, PMatrix, 32);
+}
+void reverseInitialPermutation(uint64_t& input)
+{
+	permuteMatrix(input, IPInverse, 64);
+}
+void swapLR(uint64_t& input) // Swap left (32 bit) and right (32 bit) parts of the 64 bit input.
+{
+	uint64_t temp = input;
+	// containing left side 
+	temp >>= 32;
+
+	// right side moved to left
+	input <<= 32;
+
+	// left side moved to right
+	input += temp;
+}
 void generateKey(uint64_t& key)
 {
 	// 64 bits
@@ -44,7 +92,6 @@ void rightCircularShift(uint32_t& input, uint8_t times)
 		input += bit * bit28th;
 	}
 	input = input & mask28Bits;
-
 }
 void generateRoundKey(const int& index, uint64_t& roundKey)
 {
@@ -120,54 +167,7 @@ void expandPermutation(uint64_t& input)
 {
 	permuteMatrix(input, E, 48);
 }
-void substitute(uint64_t& input)
-{
-	uint64_t result = 0; uint64_t temp;
-	uint8_t y, x;
-	uint8_t in;
 
-	uint64_t mask = 63;
-	uint8_t maskY1, maskY2, maskX;
-	maskY1 = 1;
-	maskY2 = 32;
-	maskX = 30;
-	for (int i = 0; i < 8; i++)
-	{
-		// getting x,y coordinates for Sbox
-		in = input & mask;
-		x = (in & maskX)>>1;
-		y = (in & maskY2)>>4;
-		y += in & maskY1;
-
-		// Substitution 
-		temp = SBoxes[i][y * 16 + x];
-		result += temp << (4*i);
-
-		// next bits
-		input >>= 6;
-	}
-	input = result;
-}
-void mixPermutation(uint64_t& input)
-{
-	permuteMatrix(input, PMatrix, 32);
-}
-void reverseInitialPermutation(uint64_t& input)
-{
-	permuteMatrix(input, IPInverse, 64);
-}
-void swapLR(uint64_t& input) // Swap left (32 bit) and right (32 bit) parts of the 64 bit input.
-{
-	uint64_t temp = input;
-	// containing left side 
-	temp >>= 32;
-
-	// right side moved to left
-	input <<= 32;
-
-	// left side moved to right
-	input += temp;
-}
 
 // Matrix helper functions
 void permuteMatrix(uint64_t& input, const unsigned char* P, const unsigned int size)
