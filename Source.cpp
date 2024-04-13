@@ -1,46 +1,51 @@
 #include <iostream>
 #include "DES.h"
 
-unsigned int P0[] = 
-{	
-	2,3,4,5,10,
-	9,8,7,6,1
-};
-
-void printMatrixarr(unsigned int* P, int y, int x)
-{
-	for (int i = 0; i < y; i++)
-	{
-		for (int j = 0; j < x; j++)
-		{
-			std::cout << P[i*x+j] << ",";
-		}
-		std::cout << "\n";
-	}
-	std::cout << "Matrix array printed.\n";
-}
 int main()
 {
-	uint64_t input = 225;
+	// Testing the speed and time of the DES algorithm.
 
-	// equiv matrix test
-	//uint64_t input1 = 225;
-	//int a = bEqualMatrix(input, input1, 64);
-	//std::cout << "Result from a: " << a << "\n";
+	const int numTests = 1 << 19; // number of tests to get 4MB plaintext
+	uint64_t key;
+	uint64_t plaintext;
+	uint64_t encryption, decryption;
+	uint64_t* plaintexts = new uint64_t[numTests];
+	int bFlag = 0;
 
-	// calculate reverseIP:
-	//printMatrixarr(IP, 8, 8);
-	//unsigned int RIP[64];
-	//for (int i = 0; i < 64; i++)
-	//{
-	//	RIP[IP[i]-1] = i + 1;
-	//}
-	//printMatrixarr(RIP, 8, 8);
-	//printMatrix(input, 2, 5);
+	for (int i = 0; i < numTests; i++)
+	{
+		plaintexts[i] = ((uint64_t)rand()) << 32 | rand();
+	}
 
-	//unsigned int P[2][5] = { {2,3,4,5,10},{9,8,7,6,1} };
+	// running a 100 tests on Encryption/Decryption validation on random values of plaintext.
+	clock_t start = clock();
+	for (int i = 0; i < numTests; i++)
+	{
+		plaintext = plaintexts[i];
+		InitKeyDES(key);
 
-	//permuteMatrix(&input, (unsigned int*)P, sizeof(P1)/sizeof(unsigned int));
-	//printMatrix(input, 2, 5);
-	foo();
+		EncryptDES(plaintext, key, encryption);
+		DecryptDES(encryption, key, decryption);
+
+		if (plaintext != decryption)
+		{
+			bFlag = 1;
+			break;
+		}
+	}
+	clock_t end = clock();
+	double timeDiff = (double)(end - start) / CLOCKS_PER_SEC;
+
+	double sizeBytes = numTests * 8; // 8 bytes of plaintext
+	//double avgTime = timeDiff.count() / numTests;
+	double sizeMegaBytes = sizeBytes / 1048576;
+	//double speed = sizeMegaBytes / (timeDiff.count());
+	double speed = sizeMegaBytes / (timeDiff);
+
+	std::cout << "Was encryption/decryption successful? " << (bFlag ? "false" : "true") << "\n";
+	std::cout << "Total time to encrypt + decrypt: " << timeDiff << "s\n";
+	std::cout << "Total bytes (encrypted+decrypted): " << sizeBytes << " bytes\n";
+	std::cout << "Average time to encrypt + decrypt: " << (timeDiff * 1000 * 1000) / numTests << "us\n";
+	std::cout << "Average speed to encrypt + decrypt: " << speed << "MBPS (Megabytes Per Second)\n";
+	std::cout << "Average speed to encrypt + decrypt: " << speed * 8 << "MBPS (Megabits Per Second)\n";
 }
