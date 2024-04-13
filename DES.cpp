@@ -243,6 +243,7 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t* keys, uint64_t& encry
 	uint64_t roundKey;
 	uint64_t permutedRoundKey;
 	uint64_t left; // last 32 bits of plaintext/input to algorithm are preserved in this variable 
+	uint64_t right; // first 32 bits of plaintext/input to algorithm are preserved in this variable 
 
 	initialPermutation(input);
 
@@ -322,85 +323,105 @@ void DecryptDES(const uint64_t& encryption, const uint64_t* keys, uint64_t& decr
 // Testing function
 void foo()
 {
-	//const int numTests = 524288; // number of tests to generate 4MB of plaintext.
-	//uint64_t keys[16];
-	//uint64_t plaintext; 
-	//uint64_t encryption, decryption;
-	//uint64_t* plaintexts = new uint64_t[numTests];
-	//int bFlag = 0;
+	clock_t beginning = clock();
+	const int numTests = 524288; // number of tests to generate 4MB of plaintext.
+	uint64_t keys[16];
+	uint64_t plaintext; 
+	uint64_t encryption, decryption;
+	uint64_t* plaintexts = new uint64_t[numTests];
+	int bFlag = 0;
 
-	////prep plaintexts
-	//for (int i = 0; i < numTests; i++)
-	//{
-	//	plaintexts[i] = ((uint64_t)rand()) << 32 | rand();
-	//}
+	//prep plaintexts
+	for (int i = 0; i < numTests; i++)
+	{
+		plaintexts[i] = ((uint64_t)rand()) << 32 | rand();
+	}
 
-	//// running tests on Encryption/Decryption validation on random values of plaintext.
-	//clock_t start = clock();
-	//for (int i = 0; i < numTests; i++)
-	//{
-	//	plaintext = plaintexts[i];
-	//	InitKeyDES(&keys[0]);
-	//	EncryptDES(plaintext, &keys[0], encryption);
-	//	DecryptDES(encryption, &keys[0], decryption);
+	// running tests on Encryption/Decryption validation on random values of plaintext.
+	clock_t start = clock();
+	for (int i = 0; i < numTests; i++)
+	{
+		plaintext = plaintexts[i];
+		InitKeyDES(&keys[0]);
+		EncryptDES(plaintext, &keys[0], encryption);
+		DecryptDES(encryption, &keys[0], decryption);
 
-	//	if (plaintext!=decryption)
-	//	{
-	//		bFlag = 1;
-	//		break;
-	//	}
-	//}
-	//clock_t end = clock();
-	//double timeDiff = (double)(end - start) / (CLOCKS_PER_SEC);
+		if (plaintext!=decryption)
+		{
+			bFlag = 1;
+			break;
+		}
+	}
+	clock_t end = clock();
+	double timeDiff = (double)(end - start) / (CLOCKS_PER_SEC);
 
-	//double sizeBytes = numTests * 8; // 8 bytes of plaintext
-	//double avgTime = timeDiff / numTests;
-	//double sizeMegaBytes = sizeBytes / 1048576;
-	//double speed = sizeMegaBytes / (timeDiff);
+	double sizeBytes = numTests * 8; // 8 bytes of plaintext
+	double avgTime = timeDiff / numTests;
+	double sizeMegaBytes = sizeBytes / 1048576;
+	double speed = sizeMegaBytes / (timeDiff);
 
-	//std::cout << "Was encryption/decryption successful? " << (bFlag ? "false" : "true") << "\n";
-	//std::cout << "Total time to encrypt + decrypt: " << timeDiff << "s\n";
-	//std::cout << "Total bytes (encrypted+decrypted): " << sizeBytes << " bytes\n";
-	//std::cout << "Average time to encrypt + decrypt: " << (timeDiff*1000*1000) / numTests << "us\n";
-	//std::cout << "Average speed to encrypt + decrypt: " << speed << "MBPS (Megabytes Per Second)\n";
-	//std::cout << "Average speed to encrypt + decrypt: " << speed * 8 << "MbPS (Megabits Per Second)\n";
-
+	std::cout << "Was encryption/decryption successful? " << (bFlag ? "false" : "true") << "\n";
+	std::cout << "Total time to encrypt + decrypt: " << timeDiff << "s\n";
+	std::cout << "Total bytes (encrypted+decrypted): " << sizeBytes << " bytes\n";
+	std::cout << "Average time to encrypt + decrypt: " << (timeDiff*1000*1000) / numTests << "us\n";
+	std::cout << "Average speed to encrypt + decrypt: " << speed << "MBPS (Megabytes Per Second)\n";
+	std::cout << "Average speed to encrypt + decrypt: " << speed * 8 << "MbPS (Megabits Per Second)\n";
+	
+	timeDiff = (double)(end - beginning) / (CLOCKS_PER_SEC);
+	std::cout << "Total time to encrypt + decrypt: " << timeDiff << "s\n";
 	// multithread
 
-	uint64_t keys[16];
-	uint64_t msg = 12297829382473034410;
-	uint64_t key = 13527612320720337851;
-	uint64_t encrypt;
+	//uint64_t keys[16];
+	//uint64_t msg = 4702111234474983745;
+	//uint64_t key = 4774451407313060418;
+	//uint64_t encrypt;
 
-	uint64_t roundKey;
-	for (int i = 0; i < 16; i++)
-	{
-		generateRoundKey(i, roundKey);
-		roundKeyPermutation(roundKey);
-		keys[i] = roundKey;
-	}
-	EncryptDES(msg, keys, encrypt);
-	char buff[17]; buff[16] = 0;
-	//std::cout << msg;
-	uint64_t mask = 15;
-	uint64_t res;
-	for (int i = 0; i < 16; i++)
-	{
-		res = encrypt & mask;
-		if (res >= 10)
-		{
-			res += 55;
-		}
-		if (res < 10)
-		{
-			res += 48;
-		}
-		buff[i] = (char)res;
-		if (i % 2 == 0 && i > 0)
-			printf(" ");
-		printf("%c", buff[i]);
-		encrypt >>= 4;
-	}
+	//permuteMatrix(key, PC1, 56);
+	//uint64_t roundKey = key;
+	//uint64_t roundKeyPerm;
+	//for (int i = 0; i < 16; i++)
+	//{
+	//	generateRoundKey(i, roundKey);
+	//	roundKeyPerm = roundKey;
+	//	roundKeyPermutation(roundKeyPerm);
+	//	keys[i] = roundKeyPerm;
+	//	//printMatrix(roundKey, 1, 56);
+	//}
+	//EncryptDES(msg, keys, encrypt);
+	//char buff[17]; buff[16] = 0;
+	////std::cout << msg;
+	//uint64_t mask = 17293822569102704640;
+	//uint64_t res;
+	//uint64_t encryption = encrypt;
+	//for (int i = 0; i < 16; i++)
+	//{
+	//	res = encrypt & mask;
+	//	res >>= 60;
+	//	if (res >= 10)
+	//	{
+	//		res += 55;
+	//	}
+	//	if (res < 10)
+	//	{
+	//		res += 48;
+	//	}
+	//	buff[i] = (char)res;
+	//	if (i % 2 == 0 && i > 0)
+	//		printf(" ");
+	//	printf("%c", buff[i]);
+	//	encrypt <<= 4;
+	//}
+	//uint64_t decrypt;
+	//DecryptDES(encryption, keys, decrypt);
+	//int bSuccess = (msg == decrypt);
+	//std::cout << "\nSuccess? " << (bSuccess ? "Yes":"No") << "\n" << decrypt << "\n";
+	//printMatrix(encryption, 8, 8);
+	//std::cout << encryption;
+
+	//uint64_t newMsg = 6339430835082086936;
+	//DecryptDES(newMsg, keys, decrypt);
+	//std::cout << "\n" << decrypt << "\n";
+
 	//printf("\n%s\n", buff);
 }
 
