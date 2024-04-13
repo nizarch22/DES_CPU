@@ -19,11 +19,10 @@ int main()
 
 	// running a 100 tests on Encryption/Decryption validation on random values of plaintext.
 	clock_t start = clock();
+	InitKeyDES(key);
 	for (int i = 0; i < numTests; i++)
 	{
 		plaintext = plaintexts[i];
-		InitKeyDES(key);
-
 		EncryptDES(plaintext, key, encryption);
 		DecryptDES(encryption, key, decryption);
 
