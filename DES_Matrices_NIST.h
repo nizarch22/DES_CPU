@@ -1,6 +1,6 @@
 #pragma once
 // defining permutation matrices
-unsigned char IP[] =
+unsigned char IPInverse[] =
 {
 	40,8,48,16,56,24,64,32,
 	39,7,47,15,55,23,63,31,
@@ -33,7 +33,7 @@ unsigned char PMatrix[] =
 	19,13,30,6,
 	22,11,4,25
 };
-unsigned char IPInverse[] =
+unsigned char IP[] =
 {
 	58,50,42,34,26,18,10,2,
 	60,52,44,36,28,20,12,4,
