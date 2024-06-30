@@ -222,6 +222,8 @@ void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& decryp
 	uint64_t permutedRoundKey;
 	uint64_t left; // last 32 bits of plaintext/input to algorithm are preserved in this variable 
 
+	// Initial operations 
+	permuteMatrix(shiftedKey, PC1, 56); // PC1 of key
 	initialPermutation(input);
 
 	for (int i = 0; i < 16; i++)
@@ -268,7 +270,8 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 	uint64_t& result = decryption;
 	uint64_t left;
 
-	// initial operations
+	// Initial operations 
+	permuteMatrix(shiftedKey, PC1, 56); // PC1 of key
 	fullShiftLCS(shiftedKey);
 	initialPermutation(input);
 
