@@ -313,9 +313,119 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 /////////////////////////////////////////////////////////////////////////////////////
 // Testing functions
 /////////////////////////////////////////////////////////////////////////////////////
-void foo()
+
+
+typedef struct { uint32_t m1; uint16_t m2; } uint48_t;
+uint48_t operator^(const uint48_t& lhs, const uint48_t& rhs)
 {
+	uint48_t result;
+	result.m1 = lhs.m1 ^ rhs.m1;
+	result.m2 = lhs.m2 ^ rhs.m2;
+	return result;
+}
+
+uint32_t** getTBoxFromSBox(const unsigned char* sbox)
+{
+	uint32_t** tbox = (uint32_t**)malloc(64 * sizeof(uint32_t*));
+	for (int i = 0; i < 64; i++)
+	{
+		tbox[i] = (uint32_t*)malloc(64 * sizeof(uint32_t));
+	}
+	uint8_t combinedInput;
+	//uint48_t combinedInput = permutedRoundKey ^ input;
+	for (uint8_t input = 0; input < 64; input++)
+	{
+		for (uint8_t key = 0; key < 64; key++)
+		{
+			combinedInput = key ^ input;
+			tbox[input][key] = sbox[combinedInput];
+		}
+	}
+	return tbox;
+}
+
+uint32_t*** getTboxes()
+{
+	uint32_t*** tboxes = (uint32_t***)malloc(8 * sizeof(uint32_t**));
+	for (int i = 0; i < 8; i++)
+	{
+		tboxes[i] = getTBoxFromSBox(SBoxes[i]);
+	}
+	return tboxes;
 }
 
 
+void EncryptDESTBox(const uint64_t& plaintext, const uint64_t& key, uint64_t& decryption, uint32_t*** tboxes)
+{
+	uint64_t& result = decryption; // setting alias for decryption
 
+	uint64_t input = plaintext;
+	uint64_t shiftedKey = key;
+	uint64_t permutedRoundKey;
+	uint64_t left; // last 32 bits of plaintext/input to algorithm are preserved in this variable 
+
+	// Initial operations 
+	permuteMatrix(shiftedKey, PC1, 56); // PC1 of key
+	initialPermutation(input);
+
+	for (int i = 0; i < 16; i++)
+	{
+		// Preserving L,R.
+		// preserve right side (Result[63:32] = Input[31:0])
+		result = input;
+		result <<= 32;
+		// preserve left side
+		left = input >> 32;
+
+		// Round key
+		generateShiftedKey(i, shiftedKey);
+		permutedRoundKey = shiftedKey;
+		roundKeyPermutation(permutedRoundKey);
+
+		// Expansion permutation
+		expandPermutation(input); // 48 bits
+
+		// XOR with permuted round key
+		//input ^= permutedRoundKey;
+
+		// Substitution S-boxes
+		//substitute(input); // 32 bits
+		uint64_t inputTemp = input;
+		uint64_t keyTemp = permutedRoundKey;
+		uint8_t inputTBox8_t, keyTBox8_t;
+		for (int i = 0; i < 8; i++)
+		{
+			inputTBox8_t = inputTemp & 63;
+			keyTBox8_t = keyTemp & 63;
+			input = (uint32_t)tboxes[i][inputTBox8_t][keyTBox8_t];
+			inputTemp >>= 6;
+			keyTemp >>= 6;
+		}
+		// "P-matrix" permutation i.e. mix/shuffle
+		mixPermutation(input);
+
+		// XOR with preserved left side
+		result += left ^ input; // Result[31:0] = L XOR f[31:0];
+
+		// End of loop
+		input = result;
+	}
+
+	swapLR(result);
+	reverseInitialPermutation(result);
+}
+
+void foo()
+{
+	uint32_t*** tboxes = getTboxes();
+	// destroy
+	for (int i = 0; i < 8; i++)
+	{
+		for (int j = 0; j < 64; j++)
+		{
+			delete tboxes[i][j];
+		}
+		delete tboxes[i];
+	}
+	delete tboxes;
+}

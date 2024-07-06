@@ -6,6 +6,8 @@ void InitKeyDES(uint64_t& key);
 
 // debug functions
 void printMatrix(uint64_t matrix, int y, int x);
+uint32_t*** getTboxes();
+void EncryptDESTBox(const uint64_t& plaintext, const uint64_t& key, uint64_t& decryption, uint32_t*** tboxes);
 void foo();
 
 //- including will not be necessary after debugging is done.
