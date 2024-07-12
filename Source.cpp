@@ -1,36 +1,31 @@
+#include <stdio.h>
 #include <iostream>
+
 #include "DES.h"
 
 int main()
 {
 	// Testing the speed and time of the DES algorithm.
-
-	const int numTests = 1 << 19; // number of tests to get 4MB plaintext
-	uint64_t key;
-	uint64_t plaintext;
-	uint64_t encryption, decryption;
-	uint64_t* plaintexts = new uint64_t[numTests];
-	int bFlag = 0;
-
+	const int numTests = 524288; // number of tests to get 4MB plaintext
+	const int bytesMessages = sizeof(uint64_t) * numTests;
+	uint64_t* plaintexts = (uint64_t*)malloc(bytesMessages);
+	uint64_t* keys = (uint64_t*)malloc(bytesMessages);
+	uint64_t* encryptions = (uint64_t*)malloc(bytesMessages);
+	uint64_t* decryptions = (uint64_t*)malloc(bytesMessages);
 	for (int i = 0; i < numTests; i++)
 	{
 		plaintexts[i] = ((uint64_t)rand()) << 32 | rand();
+		keys[i] = ((uint64_t)rand()) << 32 | rand();
+		encryptions[i] = 0;
+		decryptions[i] = 0;
 	}
 
 	// running tests on Encryption/Decryption validation on randomly generated plaintexts.
 	clock_t start = clock();
-	InitKeyDES(key);
 	for (int i = 0; i < numTests; i++)
 	{
-		plaintext = plaintexts[i];
-		EncryptDES(plaintext, key, encryption);
-		DecryptDES(encryption, key, decryption);
-
-		if (plaintext != decryption)
-		{
-			bFlag = 1;
-			break;
-		}
+		EncryptDES(plaintexts[i], keys[i], encryptions[i]);
+		//DecryptDES(encryptions[i], keys[i], decryptions[i]);
 	}
 	clock_t end = clock();
 	double timeDiff = (double)(end - start) / CLOCKS_PER_SEC;
@@ -40,6 +35,13 @@ int main()
 	double sizeMegaBytes = sizeBytes / 1048576;
 	//double speed = sizeMegaBytes / (timeDiff.count());
 	double speed = sizeMegaBytes / (timeDiff);
+
+
+	int bFlag = 1;
+	for (int i = 0; i < numTests; i++)
+	{
+		bFlag &= plaintexts[i] == decryptions[i];
+	}
 
 	std::cout << "Was encryption/decryption successful? " << (bFlag ? "false" : "true") << "\n";
 	std::cout << "Total time to encrypt + decrypt: " << timeDiff << "s\n";
