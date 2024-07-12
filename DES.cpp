@@ -208,14 +208,13 @@ void printMatrix(uint64_t matrix, int y, int x)
 /////////////////////////////////////////////////////////////////////////////////////
 // Essential functions
 /////////////////////////////////////////////////////////////////////////////////////
-void InitKeyDES(uint64_t& key)
+void InitKeyDES(uint64_t& key) // generates random number - accessible to user.
 {
 	generateKey(key);
-	permuteMatrix(key, PC1, 56);
 }
-void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& decryption)
+void EncryptDES(const uint64_t& plaintext, const uint64_t& key, uint64_t& encryption)
 {
-	uint64_t& result = decryption; // setting alias for decryption
+	uint64_t& result = encryption; // setting alias for decryption
 
 	uint64_t input = plaintext;
 	uint64_t shiftedKey = key;
