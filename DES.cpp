@@ -39,7 +39,7 @@ void substitute(uint64_t& input)
 		// getting x,y coordinates for Sbox
 		in = input & mask;
 		x = (in & maskX) >> 1;
-		y = (in & maskY2) >> 4;
+		y = (in & maskY2) >> 5;
 		y += in & maskY1;
 
 		// Substitution 
