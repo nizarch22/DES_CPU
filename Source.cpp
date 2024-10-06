@@ -30,13 +30,13 @@ int main()
 	clock_t end = clock();
 
 	// Check if decryptions match messages
-	bool valid = 1;
+	bool bValid = 1;
 	for (int i = 0; i < numTests; i++)
 	{
 		DecryptDES(encryptions[i], keys[i], decryptions[i]);
-		valid &= (decryptions[i] == plaintexts[i]);
+		bValid &= (decryptions[i] == plaintexts[i]);
 	}
-	if (!valid)
+	if (!bValid)
 	{
 		std::cout << "Decryption-message Mismatch!\n";
 		return -1;
@@ -49,14 +49,7 @@ int main()
 	//double speed = sizeMegaBytes / (timeDiff.count());
 	double speed = sizeMegaBytes / (timeDiff);
 
-
-	int bFlag = 1;
-	for (int i = 0; i < numTests; i++)
-	{
-		bFlag &= plaintexts[i] == decryptions[i];
-	}
-
-	std::cout << "Was encryption/decryption successful? " << (bFlag ? "false" : "true") << "\n";
+	std::cout << "Was encryption/decryption successful? " << (bValid ? "true" : "false") << "\n";
 	std::cout << "Total time to encrypt: " << timeDiff << "s\n";
 	std::cout << "Total Megabytes (encrypted): " << sizeMegaBytes << "Megabytes\n";
 	//std::cout << "Average time to encrypt + decrypt: " << (timeDiff * 1000 * 1000) / numTests << "us\n";
