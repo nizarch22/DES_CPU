@@ -12,7 +12,7 @@ int main()
 	uint64_t plaintext;
 	uint64_t encryption, decryption;
 	uint64_t* plaintexts = new uint64_t[numTests];
-	int bFlag = 0;
+	int bValid = 1;
 
 	// looad plaintexts
 	for (int i = 0; i < numTests; i++)
@@ -29,13 +29,15 @@ int main()
 		EncryptDES(plaintext, &roundKeys[0], encryption);
 		DecryptDES(encryption, &roundKeys[0], decryption);
 
-		if (plaintext != decryption)
-		{
-			bFlag = 1;
-			break;
-		}
+		bValid &= (plaintext == decryption);
 	}
 	clock_t end = clock();
+
+	if (!bValid)
+	{
+		std::cout << "Invalid encryption-decryption!\n";
+		return -1;
+	}
 	double timeDiff = (double)(end - start) / (CLOCKS_PER_SEC);
 
 	double sizeBytes = numTests * 8; // 8 bytes of plaintext
@@ -43,7 +45,7 @@ int main()
 	double sizeMegaBytes = sizeBytes / 1048576;
 	double speed = sizeMegaBytes / (timeDiff);
 
-	std::cout << "Was encryption/decryption successful? " << (bFlag ? "false" : "true") << "\n";
+	std::cout << "Was encryption/decryption successful? " << (bValid ? "true" : "false") << "\n";
 	std::cout << "Total time to encrypt + decrypt: " << timeDiff << "s\n";
 	std::cout << "Total bytes (encrypted+decrypted): " << sizeBytes << " bytes\n";
 	std::cout << "Average time to encrypt + decrypt: " << (timeDiff * 1000 * 1000) / numTests << "us\n";
