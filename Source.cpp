@@ -54,7 +54,7 @@ int main()
 	double sizeMegaBytes = sizeBytes / 1048576;
 	double speed = sizeMegaBytes / timeDiff;
 
-	std::cout << "Total Megabytes (encrypted): " << sizeMegaBytes << "Megabytes\n";
+	std::cout << "Total encrypted size: " << sizeMegaBytes << "Megabytes\n";
 	std::cout << "Average speed to encrypt: " << speed * 8 << "MBPS (Megabits Per Second)\n";
 
 }
