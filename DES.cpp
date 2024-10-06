@@ -271,7 +271,7 @@ void DecryptDES(const uint64_t& encryption, const uint64_t& key, uint64_t& decry
 
 	// Initial operations 
 	permuteMatrix(shiftedKey, PC1, 56); // PC1 of key
-	fullShiftLCS(shiftedKey);
+	//fullShiftLCS(shiftedKey);
 	initialPermutation(input);
 
 	for (int i = 0; i < 16; i++)
