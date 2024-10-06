@@ -8,31 +8,40 @@ int main()
 
 	clock_t beginning = clock();
 	const int numTests = 524288; // number of tests to generate 4MB of plaintext.
-	uint64_t roundKeys[16];
-	uint64_t plaintext;
+	const int numRoundKeys = 8388608; // 16*numTests
+
 	uint64_t encryption, decryption;
+	uint64_t* roundKeys = new uint64_t[numRoundKeys];
 	uint64_t* plaintexts = new uint64_t[numTests];
+	uint64_t* encryptions = new uint64_t[numTests];
+	uint64_t* keys = new uint64_t[numTests];
 	int bValid = 1;
 
-	// looad plaintexts
+	// looad plaintexts and keys
 	for (int i = 0; i < numTests; i++)
 	{
 		plaintexts[i] = ((uint64_t)rand()) << 32 | rand();
+		keys[i] = ((uint64_t)rand()) << 32 | rand();
 	}
 
 	// running tests on Encryption/Decryption validation on random values of plaintext.
 	clock_t start = clock();
-	InitKeysDES(&roundKeys[0]);
+	
 	for (int i = 0; i < numTests; i++)
 	{
-		plaintext = plaintexts[i];
-		EncryptDES(plaintext, &roundKeys[0], encryption);
-		DecryptDES(encryption, &roundKeys[0], decryption);
-
-		bValid &= (plaintext == decryption);
+		InitKeysDES(&roundKeys[i], keys[i]);
+	}
+	for (int i = 0; i < numTests; i++)
+	{
+		EncryptDES(plaintexts[i], &roundKeys[i], encryptions[i]);
 	}
 	clock_t end = clock();
 
+	for (int i = 0; i < numTests; i++)
+	{
+		DecryptDES(encryptions[i], &roundKeys[i], decryption);
+		bValid &= (plaintexts[i] == decryption);
+	}
 	if (!bValid)
 	{
 		std::cout << "Invalid encryption-decryption!\n";
@@ -43,15 +52,9 @@ int main()
 	double sizeBytes = numTests * 8; // 8 bytes of plaintext
 	double avgTime = timeDiff / numTests;
 	double sizeMegaBytes = sizeBytes / 1048576;
-	double speed = sizeMegaBytes / (timeDiff);
+	double speed = sizeMegaBytes / timeDiff;
 
-	std::cout << "Was encryption/decryption successful? " << (bValid ? "true" : "false") << "\n";
-	std::cout << "Total time to encrypt + decrypt: " << timeDiff << "s\n";
-	std::cout << "Total bytes (encrypted+decrypted): " << sizeBytes << " bytes\n";
-	std::cout << "Average time to encrypt + decrypt: " << (timeDiff * 1000 * 1000) / numTests << "us\n";
-	std::cout << "Average speed to encrypt + decrypt: " << speed << "MBPS (Megabytes Per Second)\n";
-	std::cout << "Average speed to encrypt + decrypt: " << speed * 8 << "MbPS (Megabits Per Second)\n";
+	std::cout << "Total Megabytes (encrypted): " << sizeMegaBytes << "Megabytes\n";
+	std::cout << "Average speed to encrypt: " << speed * 8 << "MBPS (Megabits Per Second)\n";
 
-	double totalTime = (double)(end - beginning) / (CLOCKS_PER_SEC);
-	std::cout << "Total time from start to finish:" << totalTime << "s\n";
 }

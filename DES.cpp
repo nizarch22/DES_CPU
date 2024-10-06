@@ -241,13 +241,10 @@ int bEqualMatrix(const uint64_t& m1, const uint64_t& m2, const int size)
 /////////////////////////////////////////////////////////////////////////////////////
 // Essential functions
 /////////////////////////////////////////////////////////////////////////////////////
-void InitKeysDES(uint64_t* roundKeys)
+void InitKeysDES(uint64_t* roundKeys, uint64_t key)
 {
 	// generate a random key and perform PC1 permutation
-	uint64_t key;
-	generateKey(key);
 	permuteMatrix(key, PC1, 56);
-
 	generateRoundKeys(roundKeys, key);
 }
 void EncryptDES(const uint64_t& plaintext, const uint64_t* roundKeys, uint64_t& encryption)
