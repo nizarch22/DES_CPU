@@ -49,11 +49,8 @@ int main()
 	//double speed = sizeMegaBytes / (timeDiff.count());
 	double speed = sizeMegaBytes / (timeDiff);
 
-	std::cout << "Was encryption/decryption successful? " << (bValid ? "true" : "false") << "\n";
-	std::cout << "Total time to encrypt: " << timeDiff << "s\n";
-	std::cout << "Total Megabytes (encrypted): " << sizeMegaBytes << "Megabytes\n";
-	//std::cout << "Average time to encrypt + decrypt: " << (timeDiff * 1000 * 1000) / numTests << "us\n";
-	std::cout << "Average speed to encrypt + decrypt: " << speed * 8 << "MBPS (Megabits Per Second)\n";
+	std::cout << "Total encrypted size: " << sizeMegaBytes << "Megabytes\n";
+	std::cout << "Average speed to encrypt: " << speed * 8 << "MBPS (Megabits Per Second)\n";
 	
 	return 0;
 }
